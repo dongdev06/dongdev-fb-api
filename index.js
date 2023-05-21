@@ -3,6 +3,7 @@
 var utils = require("./utils");
 var cheerio = require("cheerio");
 var log = require("npmlog");
+var fs = require("node:fs");
 
 var checkVerified = null;
 
@@ -159,69 +160,18 @@ function buildAPI(globalOptions, html, jar) {
     api["htmlData"] = noMqttData;
   }
 
-  const apiFuncNames = [
-    'addExternalModule',
-    'addUserToGroup',
-    'changeAdminStatus',
-    'changeArchivedStatus',
-    'changeAvatar',
-    'changeBio',
-    'changeBlockedStatus',
-    'changeGroupImage',
-    'changeNickname',
-    'changeThreadColor',
-    'changeThreadEmoji',
-    'createNewGroup',
-    'createPoll',
-    'deleteMessage',
-    'deleteThread',
-    'forwardAttachment',
-    'getCurrentUserID',
-    'getEmojiUrl',
-    'getFriendsList',
-		'getMessage',
-    'getThreadHistory',
-    'getThreadInfo',
-    'getThreadList',
-    'getThreadPictures',
-    'getUserID',
-    'getUserInfo',
-    'handleMessageRequest',
-    'listenMqtt',
-    'logout',
-    'markAsDelivered',
-    'markAsRead',
-    'markAsReadAll',
-    'markAsSeen',
-    'muteThread',
-    'removeUserFromGroup',
-    'resolvePhotoUrl',
-    'searchForThread',
-    'sendMessage',
-    'sendTypingIndicator',
-    'setMessageReaction',
-    'setPostReaction',
-    'setTitle',
-    'threadColors',
-    'unsendMessage',
-
-    // HTTP
-    'httpGet',
-    'httpPost',
-    'httpPostFormData',
-
-    // Deprecated features
-    "getThreadListDeprecated",
-    'getThreadHistoryDeprecated',
-    'getThreadInfoDeprecated',
-  ];
-
   var defaultFuncs = utils.makeDefaults(html, userID, ctx);
-
   // Load all api functions in a loop
-  apiFuncNames.map(function (v) {
-    api[v] = require('./src/' + v)(defaultFuncs, api, ctx);
-  });
+  fs
+    .readdirSync(__dirname + '/src/')
+    .filter((v) => v.endsWith('.js'))
+    .map(function (v) {
+      try {
+        api[v.replace('.js', '')] = require('./src/' + v)(defaultFuncs, api, ctx);
+      } catch (e) {
+        return;
+      }
+    });
 
   //Removing original `listen` that uses pull.
   //Map it to listenMqtt instead for backward compatibly.
@@ -578,7 +528,7 @@ function login(loginData, options, callback) {
     updatePresence: false,
     forceLogin: false,
     autoMarkDelivery: true,
-    autoMarkRead: false,
+    autoMarkRead: true,
     autoReconnect: true,
     logRecordSize: defaultLogRecordSize,
     online: true,
