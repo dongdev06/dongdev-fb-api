@@ -3,7 +3,6 @@
 var utils = require("./utils");
 var cheerio = require("cheerio");
 var log = require("npmlog");
-var fs = require("node:fs");
 
 var checkVerified = null;
 
@@ -162,7 +161,7 @@ function buildAPI(globalOptions, html, jar) {
 
   var defaultFuncs = utils.makeDefaults(html, userID, ctx);
   // Load all api functions in a loop
-  fs
+  require('node:fs')
     .readdirSync(__dirname + '/src/')
     .filter((v) => v.endsWith('.js'))
     .map(function (v) {
@@ -515,7 +514,7 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
 }
 
 function login(loginData, options, callback) {
-  if (utils.getType(options) === 'Function' || utils.getType(options) === 'AsyncFunction') {
+  if (typeof options == 'function') {
     callback = options;
     options = {};
   }
@@ -539,21 +538,17 @@ function login(loginData, options, callback) {
   setOptions(globalOptions, options);
 
   var prCallback = null;
-  if (utils.getType(callback) !== "Function" && utils.getType(callback) !== "AsyncFunction") {
-    var rejectFunc = null;
-    var resolveFunc = null;
+  if (typeof callback !== 'function') {
     var returnPromise = new Promise(function (resolve, reject) {
-      resolveFunc = resolve;
-      rejectFunc = reject;
+      prCallback = function (error, api) {
+        if (error) reject(error);
+        resolve(api);
+      };
     });
-    prCallback = function (error, api) {
-      if (error) {
-        return rejectFunc(error);
-      }
-      return resolveFunc(api);
-    };
     callback = prCallback;
   }
+
+  if (process.versions.node < '14') return callback('Error: node version must be 16.x or higher, recommended version: 16.7.0');
   loginHelper(loginData.appState, loginData.email, loginData.password, globalOptions, callback, prCallback);
   return returnPromise;
 }
