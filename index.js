@@ -104,6 +104,7 @@ function buildAPI(globalOptions, html, accessToken, jar) {
   let irisSeqID = null;
   var noMqttData = null;
 
+  if (accessToken == 'NONE') log.warn('login', 'Cant get access_token');
   if (oldFBMQTTMatch) {
     irisSeqID = oldFBMQTTMatch[1];
     mqttEndpoint = oldFBMQTTMatch[2];
