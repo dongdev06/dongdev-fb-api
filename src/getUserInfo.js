@@ -34,7 +34,7 @@ module.exports = function (defaultFuncs, api, ctx) {
     var cb;
     var returnPromise = new Promise(function (resolve, reject) {
       cb = function (error, resData) {
-        if (err) reject(error);
+        if (error) reject(error);
         resolve(resData);
       }
     });
