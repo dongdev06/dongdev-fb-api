@@ -29,30 +29,21 @@ function formatData(data) {
   return retObj;
 }
 
-module.exports = function(defaultFuncs, api, ctx) {
-  return function getUserInfo(id, callback) {
-    var resolveFunc = function(){};
-    var rejectFunc = function(){};
+module.exports = function (defaultFuncs, api, ctx) {
+  return function getUserInfo(userIDs, callback) {
+    var cb;
     var returnPromise = new Promise(function (resolve, reject) {
-      resolveFunc = resolve;
-      rejectFunc = reject;
+      cb = function (error, resData) {
+        if (err) reject(error);
+        resolve(resData);
+      }
     });
 
-    if (!callback) {
-      callback = function (err, friendList) {
-        if (err) {
-          return rejectFunc(err);
-        }
-        resolveFunc(friendList);
-      };
-    }
-
-    if (utils.getType(id) !== "Array") {
-      id = [id];
-    }
+    if (typeof callback == 'function') cb = callback;
+    if (Array.isArray(userIDs) == false) userIDs = [userIDs];
 
     var form = {};
-    id.map(function(v, i) {
+    userIDs.map(function(v, i) {
       form["ids[" + i + "]"] = v;
     });
     defaultFuncs
@@ -60,13 +51,14 @@ module.exports = function(defaultFuncs, api, ctx) {
       .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
       .then(function(resData) {
         if (resData.error) {
-          throw resData;
+          log.error("getUserInfo", resData.error);
+          return cb(resData);
         }
-        return callback(null, formatData(resData.payload.profiles));
+        return cb(null, formatData(resData.payload.profiles));
       })
       .catch(function(err) {
         log.error("getUserInfo", err);
-        return callback(err);
+        return cb(err);
       });
 
     return returnPromise;
