@@ -75,7 +75,7 @@ function setOptions(globalOptions, options) {
   });
 }
 
-function buildAPI(globalOptions, html, jar) {
+function buildAPI(globalOptions, html, accessToken, jar) {
   var maybeCookie = jar.getCookies("https://www.facebook.com").filter(function (val) {
     return val.cookieString().split("=")[0] === "c_user";
   });
@@ -138,7 +138,7 @@ function buildAPI(globalOptions, html, jar) {
     clientID: clientID,
     globalOptions: globalOptions,
     loggedIn: true,
-    access_token: 'NONE',
+    access_token: accessToken,
     clientMutationId: 0,
     mqttClient: undefined,
     lastSeqId: irisSeqID,
@@ -160,6 +160,7 @@ function buildAPI(globalOptions, html, jar) {
   }
 
   var defaultFuncs = utils.makeDefaults(html, userID, ctx);
+  
   // Load all api functions in a loop
   require('node:fs')
     .readdirSync(__dirname + '/src/')
@@ -476,9 +477,17 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
       }
       return res;
     })
-    .then(function (res) {
+    .then(async function (res) {
+      // get access_token (maybe?)
+      var resp = await utils.get('https://business.facebook.com/business_locations', jar, null, globalOptions);
+      var accessToken = /"],\["(\S+)","436761779744620",{/g.exec(resp.body);
+      if (accessToken) accessToken = accessToken[1].split('"],["').pop();
+      else accessToken = 'NONE';
+      return [res, accessToken];
+    })
+    .then(function ([res, accessToken]) {
       var html = res.body;
-      var stuff = buildAPI(globalOptions, html, jar);
+      var stuff = buildAPI(globalOptions, html, accessToken, jar);
       ctx = stuff[0];
       _defaultFuncs = stuff[1];
       api = stuff[2];
