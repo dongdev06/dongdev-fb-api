@@ -485,9 +485,9 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
       else accessToken = 'NONE';
       return [res, accessToken];
     })
-    .then(function ([res, accessToken]) {
-      var html = res.body;
-      var stuff = buildAPI(globalOptions, html, accessToken, jar);
+    .then(function (res) {
+      var html = res[0].body;
+      var stuff = buildAPI(globalOptions, html, res[1], jar);
       ctx = stuff[0];
       _defaultFuncs = stuff[1];
       api = stuff[2];
