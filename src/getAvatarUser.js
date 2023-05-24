@@ -8,7 +8,7 @@ module.exports = function (defaultFuncs, api, ctx) {
     var form = {};
     for (let userID of userIDs) {
       try {
-        var res = JSON.parse((await defaultFuncs.get(`https://graph.facebook.com/${userID}/picture?height=${height}&width=${width}&redirect=false&access_token=${ctx.access_token}`, ctx.jar, null, ctx.globalOptions)).body);
+        var res = await utils.parseAndCheckLogin(ctx, defaultFuncs)(await defaultFuncs.get(`https://graph.facebook.com/${userID}/picture?height=${height}&width=${width}&redirect=false&access_token=${ctx.access_token}`, ctx.jar, null, ctx.globalOptions));
         form[userID] = res.data.url; 
       } catch (e) {
         return cb(e);
