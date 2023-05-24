@@ -124,7 +124,7 @@ function buildAPI(globalOptions, html, accessToken, jar) {
         region = new URL(mqttEndpoint).searchParams.get("region").toUpperCase();
         log.warn("login", `Cannot get sequence ID with new RegExp. Fallback to old RegExp (without seqID)...`);
         log.info("login", `Got this account's message region: ${region}`);
-        log.info("login", `[Unused] Polling endpoint: ${legacyFBMQTTMatch[6]}`);
+        log.info("login", `[Unused] Polling endpoint: ${legacyFBMQTTMatch[6].split('",')[0]}`);
       } else {
         log.warn("login", "Cannot get MQTT region & sequence ID.");
         noMqttData = html;
@@ -168,7 +168,7 @@ function buildAPI(globalOptions, html, accessToken, jar) {
     .filter((v) => v.endsWith('.js'))
     .map(function (v) {
       try {
-        api[v.replace('.js', '')] = require('./src/' + v)(defaultFuncs, api, ctx);
+        return api[v.replace('.js', '')] = require('./src/' + v)(defaultFuncs, api, ctx);
       } catch (e) {
         return;
       }
