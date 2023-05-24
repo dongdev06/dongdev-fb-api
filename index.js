@@ -524,10 +524,19 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
 }
 
 function login(loginData, options, callback) {
+  var prCallback;
+  var returnPromise = new Promise(function (resolve, reject) {
+    prCallback = function (error, api) {
+      if (error) reject(error);
+      resolve(api);
+    };
+  });
+  
   if (typeof options == 'function') {
     callback = options;
     options = {};
   }
+  if (typeof callback != 'function') callback = prCallback;
 
   var globalOptions = {
     selfListen: false,
@@ -546,17 +555,6 @@ function login(loginData, options, callback) {
   };
 
   setOptions(globalOptions, options);
-
-  var prCallback = null;
-  if (typeof callback !== 'function') {
-    var returnPromise = new Promise(function (resolve, reject) {
-      prCallback = function (error, api) {
-        if (error) reject(error);
-        resolve(api);
-      };
-    });
-    callback = prCallback;
-  }
 
   if (process.versions.node < '14') return callback('Error: node version must be 14.x or higher, recommended version: 16.7.0');
   loginHelper(loginData.appState, loginData.email, loginData.password, globalOptions, callback, prCallback);
