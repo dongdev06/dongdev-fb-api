@@ -1,6 +1,6 @@
 {
   "name": "fb-chat-support",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A Facebook chat API that doesn't rely on XMPP",
   "scripts": {
     "test": "mocha",
@@ -21,7 +21,7 @@
   "bugs": {
     "url": "https://github.com/KhangGia1810/fb-chat-support/issues"
   },
-  "author": "Avery, David, Maude, Benjamin, UIRI, NTKhang (rebuild), Sam",
+  "author": "Avery, David, Maude, Benjamin, UIRI, NTKhang (rebuild), Sam (Update)",
   "license": "MIT",
   "dependencies": {
     "bluebird": "^2.11.0",
