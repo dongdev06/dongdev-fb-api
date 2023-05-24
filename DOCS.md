@@ -16,6 +16,7 @@
 * [`api.deleteThread(threadOrThreads, [callback])`](#apideletethreadthreadorthreads-callback) ⇒ <code>Promise</code>
 * [`api.forwardAttachment(attachmentID, userOrUsers, [callback])`](#apiforwardattachmentattachmentid-userorusers-callback) ⇒ <code>Promise</code>
 * [`api.getAppState()`](#apigetappstate) ⇒ <code>Array</code>
+* [`api.getAvatarUser(ids, height, width, [callback])`](#apigetavataruser-callback) ⇒ <code>Promise</code>
 * [`api.getCurrentUserID()`](#apigetcurrentuserid) ⇒ <code>string</code>
 * [`api.getEmojiUrl(c, size, pixelRatio)`](#apigetemojiurlc-size-pixelratio) ⇒ <code>string</code>
 * [`api.getFriendsList([callback])`](#apigetfriendslistcallback) ⇒ <code>Promise</code>
@@ -25,7 +26,7 @@
 * [`api.getThreadList(limit, timestamp, tags, [callback])`](#apigetthreadlistlimit-timestamp-tags-callback) ⇒ <code>Promise</code>
 * [`api.getThreadPictures(threadID, offset, limit, [callback])`](#apigetthreadpicturesthreadid-offset-limit-callback) ⇒ <code>Promise</code>
 * [`api.getUserID(name, [callback])`](#apigetuseridname-callback) ⇒ <code>Promise</code>
-* [`api.getUserInfo(ids, useGraph, [callback])`](#apigetuserinfoids-callback) ⇒ <code>Promise</code>
+* [`api.getUserInfo(ids, [useGraph], [callback])`](#apigetuserinfoids-callback) ⇒ <code>Promise</code>
 * [`api.handleMessageRequest(threadID, accept, [callback])`](#apihandlemessagerequestthreadid-accept-callback) ⇒ <code>Promise</code>
 * [`api.httpGet(url, form, [customHeader], [callback], [notAPI])`](#apihttpgeturl-form-customheader-callback-notapi) ⇒ <code>Promise</code>
 * [`api.httpPost(url, form, [customHeader], [callback], [notAPI])`](#apihttpposturl-form-customheader-callback-notapi) ⇒ <code>Promise</code>
@@ -175,7 +176,7 @@ __Review Recent Login__: Sometimes Facebook will ask you to review your recent l
 #### __Example (AppState loaded from file)__: You can get fbstate using [this](https://github.com/ntkhang03/c3c-fbstate) extension
 
 ```js
-const fs = require("fs-extra");
+const fs = require("fs");
 const login = require("fb-chat-support");
 
 login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, (err, api) => {
@@ -290,7 +291,7 @@ __Arguments__
 __Example__
 
 ```js
-const fs = require("fs-extra");
+const fs = require("fs");
 const login = require("fb-chat-support");
 
 login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, (err, api) => {
@@ -318,7 +319,7 @@ __Arguments__
 __Example__
 
 ```js
-const fs = require("fs-extra");
+const fs = require("fs");
 const login = require("fb-chat-support");
 
 login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, (err, api) => {
@@ -348,7 +349,7 @@ __Arguments__
 __Example__
 
 ```js
-const fs = require("fs-extra");
+const fs = require("fs");
 const login = require("fb-chat-support");
 
 login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, (err, api) => {
@@ -417,8 +418,8 @@ __Arguments__
 __Example__
 
 ```js
-const fs = require("fs-extra");
-const login = require("fb-chat-api");
+const fs = require("fs");
+const login = require("fb-chat-support");
 
 login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, (err, api) => {
     if(err) return console.error(err);
@@ -536,7 +537,7 @@ __Example__
 
 ```js
 const fs = require("fs-extra");
-const login = require("fb-chat-api");
+const login = require("fb-chat-support");
 
 login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, (err, api) => {
     if(err) return console.error(err);
@@ -566,7 +567,7 @@ __Example__
 
 ```js
 const fs = require("fs-extra");
-const login = require("fb-chat-api");
+const login = require("fb-chat-support");
 
 login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, (err, api) => {
     if(err) return console.error(err);
@@ -948,8 +949,8 @@ __Arguments__
 __Example__
 
 ```js
-const fs = require("fs-extra");
-const login = require("fb-chat-api");
+const fs = require("fs");
+const login = require("fb-chat-support");
 
 login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, (err, api) => {
     if(err) return console.error(err);
@@ -968,7 +969,7 @@ login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, (err, ap
 ---------------------------------------
 
 <a name="getUserInfo"></a>
-### api.getUserInfo(ids, [callback])
+### api.getUserInfo(ids, [useGraph], [callback])
 
 Will get some information about the given users.
 
@@ -995,19 +996,14 @@ __Example__
 
 ```js
 const fs = require("fs-extra");
-const login = require("fb-chat-api");
+const login = require("fb-chat-support");
 
 login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, (err, api) => {
-    if(err) return console.error(err);
+	if(err) return console.error(err);
 
-    api.getUserInfo([1, 2, 3, 4], (err, ret) => {
-        if(err) return console.error(err);
-
-        for(var prop in ret) {
-            if(ret.hasOwnProperty(prop) && ret[prop].isBirthday) {
-                api.sendMessage("Happy birthday :)", prop);
-            }
-        }
+    api.getUserInfo([1, 2, 3, 4], true, (err, ret) => {
+	    if (err) console.log(err);
+			else console.log(ret);
     });
 });
 ```
