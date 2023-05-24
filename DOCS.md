@@ -25,7 +25,7 @@
 * [`api.getThreadList(limit, timestamp, tags, [callback])`](#apigetthreadlistlimit-timestamp-tags-callback) ⇒ <code>Promise</code>
 * [`api.getThreadPictures(threadID, offset, limit, [callback])`](#apigetthreadpicturesthreadid-offset-limit-callback) ⇒ <code>Promise</code>
 * [`api.getUserID(name, [callback])`](#apigetuseridname-callback) ⇒ <code>Promise</code>
-* [`api.getUserInfo(ids, [callback])`](#apigetuserinfoids-callback) ⇒ <code>Promise</code>
+* [`api.getUserInfo(ids, useGraph, [callback])`](#apigetuserinfoids-callback) ⇒ <code>Promise</code>
 * [`api.handleMessageRequest(threadID, accept, [callback])`](#apihandlemessagerequestthreadid-accept-callback) ⇒ <code>Promise</code>
 * [`api.httpGet(url, form, [customHeader], [callback], [notAPI])`](#apihttpgeturl-form-customheader-callback-notapi) ⇒ <code>Promise</code>
 * [`api.httpPost(url, form, [customHeader], [callback], [notAPI])`](#apihttpposturl-form-customheader-callback-notapi) ⇒ <code>Promise</code>
