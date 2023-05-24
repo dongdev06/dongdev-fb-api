@@ -556,7 +556,7 @@ function login(loginData, options, callback) {
 
   setOptions(globalOptions, options);
 
-  if (process.versions.node < '14') return callback('Error: node version must be 14.x or higher, recommended version: 16.7.0');
+  if (parseInt(process.versions.node) < 14) return callback('Error: node version must be 14.x or higher, recommended version: 16.7.0');
   loginHelper(loginData.appState, loginData.email, loginData.password, globalOptions, callback, prCallback);
   return returnPromise;
 }
