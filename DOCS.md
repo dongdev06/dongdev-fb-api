@@ -7,6 +7,7 @@
 * [`api.changeArchivedStatus(threadOrThreads, archive, [callback])`](#apichangearchivedstatusthreadorthreads-archive-callback) ⇒ <code>Promise</code>
 * [`api.changeBlockedStatus(userID, block, [callback])`](#apichangeblockedstatususerid-block-callback) ⇒ <code>Promise</code>
 * [`api.changeGroupImage(image, threadID, [callback])`](#apichangegroupimageimage-threadid-callback) ⇒ <code>Promise</code>
+* [`api.changeCover(image, [callback])`](#changecover) ⇒ <code>Promise</code>
 * [`api.changeName({ first_name, last_name, [middle_name] }, password, [form (complete, standard, reversed)], [callback])`](#chanegname-callback) ⇒ <code>Promise</code>
 * [`api.changeNickname(nickname, threadID, participantID, [callback])`](#apichangenicknamenickname-threadid-participantid-callback) ⇒ <code>Promise</code>
 * [`api.changeThreadColor(color, threadID, [callback])`](#apichangethreadcolorcolor-threadid-callback) ⇒ <code>Promise</code>
