@@ -56,7 +56,7 @@ module.exports = function (defaultFuncs, api, ctx) {
           log.error('setStoryReaction', res.errors);
           return cb(res.errors);
         }
-        return cb(null, res.data.direct_message_reply.client_mutation_id);
+        return cb();
       })
       .catch(cb);
 
