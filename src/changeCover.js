@@ -19,8 +19,8 @@ module.exports = function (defaultFuncs, api, ctx) {
         .postFormData("https://www.facebook.com/profile/picture/upload/", ctx.jar, form, {})
         .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
         .then(function (resData) {
-          if (resData.error) {
-            return cb(resData.error);
+          if (resData.errors) {
+            return cb(resData.errors);
           }
           return resData;
         })
@@ -77,7 +77,10 @@ module.exports = function (defaultFuncs, api, ctx) {
         .post('https://www.facebook.com/api/graphql', ctx.jar, form)
         .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
         .then(function (res) {
-          if (res.error) return cb(res.error);
+          if (res.errors) {
+            log.error('changeCover', res.errors);
+            return cb(res.errors);
+          }
           return cb();
         })
         .catch((err) => {
