@@ -49,6 +49,7 @@
 * [`api.setMessageReaction(reaction, messageID, [callback], [forceCustomReaction])`](#apisetmessagereactionreaction-messageid-callback-forcecustomreaction) ⇒ <code>Promise</code>
 * [`api.setOptions(options)`](#apisetoptionsoptions) ⇒ <code>Promise</code>
 * [`api.setPostReaction(postID, type, [callback])`](#apisetpostreactionpostid-type-callback) ⇒ <code>Promise</code>
+* [`api.setStoryReaction(storyID, [react (1 - 7)], [callback])`](#setstoryreaction) ⇒ <code>Promise</code>
 * [`api.setTitle(newTitle, threadID, [callback])`](#apisettitlenewtitle-threadid-callback) ⇒ <code>Promise</code>
 * [`api.threadColors`](#apithreadcolors) ⇒ <code>Object</code>
 * [`api.unsendMessage(messageID, [callback])`](#apiunsendmessagemessageid-callback) ⇒ <code>Promise</code>
