@@ -36,9 +36,9 @@ module.exports = function (defaultFuncs, api, ctx) {
           attribution_id_v2: `StoriesCometSuspenseRoot.react,comet.stories.viewer,unexpected,${Date.now()},538296,,;CometHomeRoot.react,comet.home,via_cold_start,${Date.now()},850302,4748854339,`,
           lightweight_reaction_actions: {
             offsets: [0],
-            reaction: map[react]
+            reaction: map[react] || map[1]
           },
-          message: map[react],
+          message: map[react] || map[1],
           story_id: storyID,
           story_reply_type: "LIGHT_WEIGHT",
           actor_id: ctx.userID,
