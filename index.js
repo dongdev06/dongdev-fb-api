@@ -478,14 +478,8 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
       }
       return res;
     })
-    .then(async function (res) {
-      // get access_token (maybe?)
-      var resp = await utils.get('https://business.facebook.com/business_locations', jar, null, globalOptions);
-      var accessToken = /"],\["(\S+)","436761779744620",{/g.exec(resp.body);
-      if (accessToken) accessToken = accessToken[1].split('"],["').pop();
-      else accessToken = 'NONE';
-      return [res, accessToken];
-    })
+    // get access_token (maybe?)
+    .then(utils.createAccess_token(jar, globalOptions))
     .then(function (res) {
       var html = res[0].body;
       var stuff = buildAPI(globalOptions, html, res[1], jar);
