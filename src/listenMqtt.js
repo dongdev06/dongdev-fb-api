@@ -451,6 +451,7 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
 							mentions: rmentions,
 							timestamp: delta.deltaMessageReply.repliedToMessage.messageMetadata.timestamp
 						};
+            callbackToReturn.participantIDs = delta.deltaMessageReply.message.participants;
 					} else if (delta.deltaMessageReply.replyToMessageId) {
 						return defaultFuncs
 							.post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, {
