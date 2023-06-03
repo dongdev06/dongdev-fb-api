@@ -449,6 +449,12 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
       .get('https://www.facebook.com/', jar, null, globalOptions, { noRef: true })
       .then(utils.saveCookies(jar));
   } else {
+    // Make it easier to log in with email (maybe ~~)
+    var Options = {
+      forceLogin: true,
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
+    }
+    setOptions(globalOptions, Options);
     // Open the main page, then we login with the given credentials and finally
     // load the main page again (it'll give us some IDs that we need)
     mainPromise = utils
