@@ -169,8 +169,8 @@ function buildAPI(globalOptions, html, accessToken, jar) {
     .map(function (v) {
       try {
         return api[v.replace('.js', '')] = require('./src/' + v)(defaultFuncs, api, ctx);
-      } catch (e) {
-        return;
+      } catch (_) {
+        // empty
       }
     });
 
@@ -553,11 +553,11 @@ function login(loginData, options, callback) {
     emitReady: false,
     userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/600.3.18 (KHTML, like Gecko) Version/8.0.3 Safari/600.3.18"
   };
-
   setOptions(globalOptions, options);
 
   if (parseInt(process.versions.node) < 14) return callback('Error: node version must be 14.x or higher, recommended version: 16.7.0');
   loginHelper(loginData.appState, loginData.email, loginData.password, globalOptions, callback, prCallback);
+  
   return returnPromise;
 }
 
