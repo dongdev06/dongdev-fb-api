@@ -75,7 +75,7 @@ function setOptions(globalOptions, options) {
   });
 }
 
-function buildAPI(globalOptions, html, accessToken, jar) {
+function buildAPI(globalOptions, html, token, jar) {
   var maybeCookie = jar.getCookies("https://www.facebook.com").filter(function (val) {
     return val.cookieString().split("=")[0] === "c_user";
   });
@@ -104,7 +104,7 @@ function buildAPI(globalOptions, html, accessToken, jar) {
   let irisSeqID = null;
   var noMqttData = null;
 
-  if (accessToken == 'NONE') log.warn('login', 'Cant get access_token');
+  if (token == 'NONE') log.warn('login', 'Cant get access_token');
   if (oldFBMQTTMatch) {
     irisSeqID = oldFBMQTTMatch[1];
     mqttEndpoint = oldFBMQTTMatch[2];
@@ -139,7 +139,7 @@ function buildAPI(globalOptions, html, accessToken, jar) {
     clientID: clientID,
     globalOptions: globalOptions,
     loggedIn: true,
-    access_token: accessToken,
+    access_token: token,
     clientMutationId: 0,
     mqttClient: undefined,
     lastSeqId: irisSeqID,
@@ -157,7 +157,7 @@ function buildAPI(globalOptions, html, accessToken, jar) {
   };
 
   if (noMqttData) {
-    api["htmlData"] = noMqttData;
+    api.htmlData = noMqttData;
   }
 
   var defaultFuncs = utils.makeDefaults(html, userID, ctx);
@@ -487,8 +487,8 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
     // get access_token (maybe?)
     .then(utils.createAccess_token(jar, globalOptions))
     .then(function (res) {
-      var html = res[0].body;
-      var stuff = buildAPI(globalOptions, html, res[1], jar);
+      var [html, token] = res;
+      var stuff = buildAPI(globalOptions, html.body, token, jar);
       ctx = stuff[0];
       _defaultFuncs = stuff[1];
       api = stuff[2];
