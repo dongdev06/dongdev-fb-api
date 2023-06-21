@@ -48,7 +48,7 @@ function isReadableStream(obj) {
 	);
 }
 
-function get(url, jar, qs, options, ctx) {
+function get(url, jar, qs, options, ctx, customHeader) {
 	// I'm still confused about this
 	if (getType(qs) === "Object") {
 		for (const prop in qs) {
@@ -58,7 +58,7 @@ function get(url, jar, qs, options, ctx) {
 		}
 	}
 	const op = {
-		headers: getHeaders(url, options, ctx),
+		headers: getHeaders(url, options, ctx, customHeader),
 		timeout: 60000,
 		qs: qs,
 		url: url,
@@ -850,6 +850,10 @@ function formatHistoryMessage(m) {
 // Get a more readable message type for AdminTextMessages
 function getAdminTextMessageType(type) {
 	switch (type) {
+    case 'unpin_messages_v2':
+      return 'log:unpin-message';
+    case 'pin_messages_v2':
+      return 'log:pin-message';
 		case "change_thread_theme":
 			return "log:thread-color";
 		case "change_thread_icon":
@@ -923,7 +927,8 @@ function formatDeltaEvent(m) {
 		logMessageData: logMessageData,
 		logMessageBody: m.messageMetadata.adminText,
 		timestamp: m.messageMetadata.timestamp,
-		author: m.messageMetadata.actorFbId
+		author: m.messageMetadata.actorFbId,
+    participantIDs: m.participants
 	};
 }
 
