@@ -203,7 +203,7 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
     if (v.delta.class == "NewMessage") {
         //Not tested for pages
         if (ctx.globalOptions.pageID && ctx.globalOptions.pageID != v.queue) return;
-
+      
         (function resolveAttachmentUrl(i) {
             if (v.delta.attachments && (i == v.delta.attachments.length)) {
                 var fmtMsg;
@@ -423,6 +423,8 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
             return (function () { globalCallback(null, fmtMsg); })();
         case "AdminTextMessage":
             switch (v.delta.type) {
+              case 'unpin_messages_v2':
+              case 'pin_messages_v2':
                 case "change_thread_theme":
                 case "change_thread_icon":
                 case "change_thread_nickname":
