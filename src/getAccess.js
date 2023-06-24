@@ -23,7 +23,10 @@ module.exports = function (defaultFuncs, api, ctx) {
       .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
       .then(function (html) {
         var tokenDeprecated = /"],\["(\S+)","436761779744620",{/g.exec(html);
-        if (tokenDeprecated) return cb(null, tokenDeprecated[1].split('"],["').pop());
+        if (tokenDeprecated) {
+          ctx.access_token = tokenDeprecated[1].split('"],["').pop();
+          return cb(null, tokenDeprecated[1].split('"],["').pop());
+        }
         var lsd = utils.getFrom(String(html), "[\"LSD\",[],{\"token\":\"", "\"}");
         defaultFuncs
           .post('https://business.facebook.com/security/twofactor/reauth/send/', ctx.jar, { lsd }, ctx.globalOptions, null, { Referer })
@@ -43,20 +46,21 @@ module.exports = function (defaultFuncs, api, ctx) {
                 defaultFuncs
                   .post(nextUrl, ctx.jar, form, ctx.globalOptions, null, { Referer })
                   .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
-                  .then(function (newHtml) {
+                  .then(async function (newHtml) {
                     if (String(newHtml).includes(false)) return cb({
                       type: 'undefined',
                       error: 'code is not accept or something went wrong'
                     });
-                    defaultFuncs
-                      .get('https://business.facebook.com/business_locations', ctx.jar, null, ctx.globalOptions, null, { Referer })
-                      .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
-                      .then(function (res) {
-                        var token = /"],\["(\S+)","436761779744620",{/g.exec(res);
-                        if (token) return cb(null, token[1].split('"],["').pop());
+                    utils
+                      .createAccess_token(ctx.jar, ctx.globalOptions)()
+                      .then(function ([htmlData, token]) {
+                        if (token) {
+                          ctx.access_token = token;
+                          return cb(null, token);
+                        }
                         return cb({
                           type: 'token-undefined',
-                          htmlData: res
+                          htmlData
                         });
                       });
                   })
