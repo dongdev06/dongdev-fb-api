@@ -17,18 +17,16 @@ module.exports = function (defaultFuncs, api, ctx) {
     if (ctx.access_token != 'NONE') return cb(null, ctx.access_token);
 
     var nextUrl = 'https://business.facebook.com/security/twofactor/reauth/enter/';
-    var referer = 'https://business.facebook.com/security/twofactor/reauth/?twofac_next=https%3A%2F%2Fbusiness.facebook.com%2Fbusiness_locations&type=avoid_bypass&app_id=0&save_device=0';
+    var Referer = 'https://business.facebook.com/security/twofactor/reauth/?twofac_next=https%3A%2F%2Fbusiness.facebook.com%2Fbusiness_locations&type=avoid_bypass&app_id=0&save_device=0';
     defaultFuncs
       .get('https://business.facebook.com/business_locations', ctx.jar, null, ctx.globalOptions)
       .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
       .then(function (html) {
         var tokenDeprecated = /"],\["(\S+)","436761779744620",{/g.exec(html);
         if (tokenDeprecated) return cb(null, tokenDeprecated[1].split('"],["').pop());
-        console.log(/"LSD",\[],{"token":"(\S+)"},323],\[/g.exec(html));
         var lsd = utils.getFrom(String(html), "[\"LSD\",[],{\"token\":\"", "\"}");
-        console.log(lsd);
         defaultFuncs
-          .post('https://business.facebook.com/security/twofactor/reauth/send/', ctx.jar, { lsd }, ctx.globalOptions, { referer })
+          .post('https://business.facebook.com/security/twofactor/reauth/send/', ctx.jar, { lsd }, ctx.globalOptions, null, { Referer })
           .then(function () {
             var err = {
               type: 'submitCode',
@@ -43,7 +41,7 @@ module.exports = function (defaultFuncs, api, ctx) {
                   lsd 
                 };
                 defaultFuncs
-                  .post(nextUrl, ctx.jar, form, ctx.globalOptions, { referer })
+                  .post(nextUrl, ctx.jar, form, ctx.globalOptions, null, { Referer })
                   .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
                   .then(function (newHtml) {
                     if (String(newHtml).includes(false)) return cb({
@@ -51,7 +49,7 @@ module.exports = function (defaultFuncs, api, ctx) {
                       error: 'code is not accept or something went wrong'
                     });
                     defaultFuncs
-                      .get('https://business.facebook.com/business_locations', ctx.jar, null, ctx.globalOptions)
+                      .get('https://business.facebook.com/business_locations', ctx.jar, null, ctx.globalOptions, null, { Referer })
                       .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
                       .then(function (res) {
                         var token = /"],\["(\S+)","436761779744620",{/g.exec(res);
