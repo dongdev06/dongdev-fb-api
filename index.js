@@ -537,6 +537,7 @@ function login(loginData, options, callback) {
     options = {};
   }
   if (typeof callback != 'function') callback = prCallback;
+  if (!options) options = {};
 
   var globalOptions = {
     selfListen: false,
