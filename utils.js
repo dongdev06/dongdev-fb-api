@@ -1407,10 +1407,10 @@ function createAccess_token(jar, globalOptions) {
         var accessToken = /"],\["(\S+)","436761779744620",{/g.exec(resp.body);
         if (accessToken) accessToken = accessToken[1].split('"],["').pop();
         else accessToken = 'NONE';
-        return [res, accessToken];
+        return [(res || resp.body), accessToken];
       })
       .catch(() => {
-        return [res, 'NONE'];
+        return [(res || null), 'NONE'];
       })
   }
 }
