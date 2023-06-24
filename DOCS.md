@@ -18,6 +18,7 @@
 * [`api.deleteThread(threadOrThreads, [callback])`](#apideletethreadthreadorthreads-callback) ⇒ <code>Promise</code>
 * [`api.forwardAttachment(attachmentID, userOrUsers, [callback])`](#apiforwardattachmentattachmentid-userorusers-callback) ⇒ <code>Promise</code>
 * [`api.getAppState()`](#apigetappstate) ⇒ <code>Array</code>
+* [1api.getAccess(callback)](#getaccesstoken) ⇒ <code>Promise</code>
 * [`api.getAvatarUser(ids, [height, width], [callback])`](#apigetavataruser-callback) ⇒ <code>Promise</code>
 * [`api.getCurrentUserID()`](#apigetcurrentuserid) ⇒ <code>string</code>
 * [`api.getEmojiUrl(c, size, pixelRatio)`](#apigetemojiurlc-size-pixelratio) ⇒ <code>string</code>
@@ -188,6 +189,28 @@ login({appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))}, (err, ap
 });
 ```
 
+---------------------------------------
+
+<a name="getAccess"></a>
+### api.getAccess(callback)
+```js
+var prompt = require('prompt-sync')();
+api.getAccess(function (err, token) {
+  if (err) {
+    switch (err.type) {
+      case 'submitCode':
+        // if your account turn on approvals
+        var code = prompt('Input your code: ');
+        err.continue(code);
+        break;
+      default:
+        return console.log(err);
+        break;
+    }
+  }
+  console.log(token);
+});
+```
 
 ---------------------------------------
 
