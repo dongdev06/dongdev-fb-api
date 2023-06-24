@@ -54,7 +54,7 @@ module.exports = function (defaultFuncs, api, ctx) {
                     utils
                       .createAccess_token(ctx.jar, ctx.globalOptions)()
                       .then(function ([htmlData, token]) {
-                        if (token) {
+                        if (token != 'NONE') {
                           ctx.access_token = token;
                           return cb(null, token);
                         }
