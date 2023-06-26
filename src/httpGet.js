@@ -5,53 +5,50 @@ var log = require("npmlog");
 
 module.exports = function (defaultFuncs, api, ctx) {
   return function httpGet(url, form, customHeader, callback, notAPI) {
-    var resolveFunc = function () { };
-    var rejectFunc = function () { };
-
+    var cb;
     var returnPromise = new Promise(function (resolve, reject) {
-      resolveFunc = resolve;
-      rejectFunc = reject;
+      cb = function (err, resData) {
+        if (err) reject(err);
+        resolve(resData);
+      }
     });
 
-    if (utils.getType(form) == "Function" || utils.getType(form) == "AsyncFunction") {
+    if (typeof form == 'function') {
       callback = form;
-      form = {};
+      form = null;
     }
-
-    if (utils.getType(customHeader) == "Function" || utils.getType(customHeader) == "AsyncFunction") {
+    if (typeof customHeader == 'function') {
       callback = customHeader;
-      customHeader = {};
+      customHeader = {}
     }
-
-    customHeader = customHeader || {};
-
-    callback = callback || function (err, data) {
-      if (err) return rejectFunc(err);
-      resolveFunc(data);
-    };
+    if (typeof callback == 'boolean') {
+      notAPI = callback;
+      callback = null;
+    }
+    if (typeof callback == 'function') cb = callback;
 
     if (notAPI) {
       utils
         .get(url, ctx.jar, form, ctx.globalOptions, ctx, customHeader)
         .then(function (resData) {
-          callback(null, resData.body.toString());
+          return cb(null, String(resData.body));
         })
         .catch(function (err) {
-          log.error("httpGet", err);
-          return callback(err);
+          log.error('httpGet', err);
+          return cb(err);
         });
     } else {
       defaultFuncs
-        .get(url, ctx.jar, form, null, customHeader)
+        .get(url, ctx.jar, form, ctx.globalOptions, ctx, customHeader)
         .then(function (resData) {
-          callback(null, resData.body.toString());
+          return cb(null, String(resData.body));
         })
         .catch(function (err) {
-          log.error("httpGet", err);
-          return callback(err);
+          log.error('httpGet', err);
+          return cb(err);
         });
     }
 
     return returnPromise;
-  };
-};
+  }
+}
