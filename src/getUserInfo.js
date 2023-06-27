@@ -58,6 +58,11 @@ function formatDataGraph(data) {
         avatar: !!res.picture == true ? res.picture.data.url : null,
         relationship_status: !!res.relationship_status == true ? res.relationship_status : null,
         subscribers: !!res.subscribers == true ? res.subscribers.data : null,
+        favorite_athletes: !!res.favorite_athletes == false ? [] : res.favorite_athletes.map(function (v) {
+          return {
+            name: v.name
+          }
+        }),
         education: !!res.education == true ? res.education.map(function(v) {
           return {
             type: v.type,
@@ -76,7 +81,7 @@ module.exports = function (defaultFuncs, api, ctx) {
   async function getData(userIDs, cb) {
     var form = {};
     for (let userID of userIDs) {
-      var res = await utils.parseAndCheckLogin(ctx, defaultFuncs)(await defaultFuncs.get(`https://graph.facebook.com/v1.0/${userID}?fields=name,verified,cover,first_name,email,about,birthday,gender,website,hometown,link,location,quotes,relationship_status,significant_other,username,subscribers.limite(0),short_name,last_name,middle_name,education,picture,work,languages&access_token=${ctx.access_token}`, ctx.jar, null, ctx.globalOptions));
+      var res = await utils.parseAndCheckLogin(ctx, defaultFuncs)(await defaultFuncs.get(`https://graph.facebook.com/v1.0/${userID}?fields=name,verified,cover,first_name,email,about,birthday,gender,website,hometown,link,location,quotes,relationship_status,significant_other,username,subscribers.limite(0),short_name,last_name,middle_name,education,picture,work,languages,favorite_athletes&access_token=${ctx.access_token}`, ctx.jar, null, ctx.globalOptions));
       form[userID] = res;
     }
     return cb(null, form);
