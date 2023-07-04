@@ -471,6 +471,7 @@ function login(loginData, options, callback) {
     options = {};
   }
   if (typeof callback == 'function') prCallback = null;
+  else callback = prCallback;
   if (options == undefined) options = {};
 
   var globalOptions = {
