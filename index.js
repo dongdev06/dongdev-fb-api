@@ -80,7 +80,7 @@ function buildAPI(globalOptions, html, token, jar) {
     return Obj;
   }, {});
 
-  if (Object.keys(maybeCookie).length === 0) {
+  if (!maybeCookie.i_user && !maybeCookie.c_user) {
     throw { error: "Error retrieving userID. This can be caused by a lot of things, including getting blocked by Facebook for logging in from an unknown location. Try logging in with a browser to verify." };
   }
 
