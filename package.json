@@ -1,6 +1,6 @@
 {
   "name": "fb-chat-support",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "A Facebook chat API that doesn't rely on XMPP",
   "scripts": {
     "test": "mocha",
