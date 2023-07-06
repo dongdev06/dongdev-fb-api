@@ -1062,6 +1062,7 @@ function makeDefaults(html, userID, ctx) {
 	// }
 
 	let ttstamp = "2";
+  var jazoest = getFrom(html, 'name="jazoest" value="', '"');
 	for (let i = 0; i < fb_dtsg.length; i++) {
 		ttstamp += fb_dtsg.charCodeAt(i);
 	}
@@ -1079,16 +1080,17 @@ function makeDefaults(html, userID, ctx) {
 		//
 		//              Ben - July 15th 2017
 		const newObj = {
+      av: userID,
 			__user: userID,
 			__req: (reqCounter++).toString(36),
 			__rev: revision,
 			__a: 1,
-			// __af: siteData.features,
+			//__af: siteData.features,
 			fb_dtsg: ctx.fb_dtsg ? ctx.fb_dtsg : fb_dtsg,
-			jazoest: ctx.ttstamp ? ctx.ttstamp : ttstamp
-			// __spin_r: siteData.__spin_r,
-			// __spin_b: siteData.__spin_b,
-			// __spin_t: siteData.__spin_t,
+			jazoest: jazoest ? jazoest : ctx.ttstamp ? ctx.ttstamp : ttstamp
+			//__spin_r: siteData.__spin_r,
+			//__spin_b: siteData.__spin_b,
+			//__spin_t: siteData.__spin_t,
 		};
 
 		// @TODO this is probably not needed.
