@@ -31,7 +31,7 @@ function formatEventReminders(reminder) {
 }
 
 function formatThreadGraphQLResponse(data) {
-	if (data.errors)
+	if (!!data.errors)
 		return data.errors;
 	const messageThread = data.message_thread;
 	if (!messageThread)
