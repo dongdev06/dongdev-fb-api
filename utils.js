@@ -23,7 +23,7 @@ function getHeaders(url, options, ctx, customHeader) {
 	var headers = {
 		"Content-Type": "application/x-www-form-urlencoded",
 		Referer: "https://www.facebook.com/",
-		Host: url.replace("https://", "").split("/")[0],
+		Host: new URL(url).hostname,
 		Origin: "https://www.facebook.com",
 		"User-Agent": options.userAgent,
 		Connection: "keep-alive",
