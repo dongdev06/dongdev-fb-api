@@ -8,9 +8,9 @@ const log = require("npmlog");
 const querystring = require("querystring");
 const url = require("url");
 
-function setProxy(urls) {
-  if (urls && urls.indexOf('https://'))
-    request = bluebird.promisify(require("request").defaults({ jar: true, proxy: urls }));
+function setProxy(proxy) {
+  if (typeof proxy == 'string')
+    request = bluebird.promisify(require("request").defaults({ jar: true, proxy }));
   else 
     request = bluebird.promisify(require("request").defaults({ jar: true }));
   return;
