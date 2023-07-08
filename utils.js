@@ -1,4 +1,4 @@
-/* eslint-disable no-prototype-builtins */
+ /* eslint-disable no-prototype-builtins */
 "use strict";
 
 const bluebird = require("bluebird");
@@ -9,14 +9,11 @@ const querystring = require("querystring");
 const url = require("url");
 
 function setProxy(url) {
-	if (typeof url == "undefined")
-    return request = bluebird.promisify(require("request").defaults({
-      jar: true
-		}));
-	return request = bluebird.promisify(require("request").defaults({
-		jar: true,
-		proxy: url
-	}));
+  if (url && url.indexOf('https://'))
+    request = bluebird.promisify(require("request").defaults({ jar: true, proxy: url }));
+  else 
+    request = bluebird.promisify(require("request").defaults({ jar: true }));
+  return;
 }
 
 function getHeaders(url, options, ctx, customHeader) {
@@ -32,7 +29,7 @@ function getHeaders(url, options, ctx, customHeader) {
 	if (customHeader) {
 		Object.assign(headers, customHeader);
 	}
-	if (customHeader && customHeader.noRef) {
+  if (customHeader && customHeader.noRef) {
     delete headers.Referer;
   }
 	if (ctx && ctx.region) {
