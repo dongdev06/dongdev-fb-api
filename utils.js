@@ -10,8 +10,8 @@ const url = require("url");
 
 function setProxy(url) {
 	if (typeof url == "undefined")
-		return request = bluebird.promisify(require("request").defaults({
-			jar: true
+    return request = bluebird.promisify(require("request").defaults({
+      jar: true
 		}));
 	return request = bluebird.promisify(require("request").defaults({
 		jar: true,
@@ -20,7 +20,7 @@ function setProxy(url) {
 }
 
 function getHeaders(url, options, ctx, customHeader) {
-	const headers = {
+	var headers = {
 		"Content-Type": "application/x-www-form-urlencoded",
 		Referer: "https://www.facebook.com/",
 		Host: url.replace("https://", "").split("/")[0],
@@ -32,6 +32,9 @@ function getHeaders(url, options, ctx, customHeader) {
 	if (customHeader) {
 		Object.assign(headers, customHeader);
 	}
+	if (customHeader && customHeader.noRef) {
+    delete headers.Referer;
+  }
 	if (ctx && ctx.region) {
 		headers["X-MSGR-Region"] = ctx.region;
 	}
