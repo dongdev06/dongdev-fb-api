@@ -381,7 +381,7 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
 
     // Load the main page.
     mainPromise = utils
-      .get('https://www.facebook.com/', jar, null, globalOptions, { noRef: true })
+      .get('https://www.facebook.com/', jar, null, globalOptions, null, { noRef: true })
       .then(utils.saveCookies(jar));
   } else {
     // Make it easier to log in with email (maybe ~~)
