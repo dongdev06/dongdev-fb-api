@@ -130,10 +130,10 @@ function buildAPI(globalOptions, html, token, jar) {
 
   // All data available to api functions
   var ctx = {
-    userID: userID,
-    jar: jar,
-    clientID: clientID,
-    globalOptions: globalOptions,
+    userID,
+    jar,
+    clientID,
+    globalOptions,
     loggedIn: true,
     access_token: token,
     clientMutationId: 0,
@@ -334,20 +334,20 @@ function makeLogin(jar, email, password, loginOptions, callback, prCallback) {
                   form['submit[This Is Okay]'] = "This Is Okay";
 
                 return utils
-                  .post(nextURL, jar, form, loginOptions)
+                  .post(Referer, jar, form, loginOptions)
 									.then(utils.saveCookies(jar))
 									.then(function () {
 										// Use the same form (safe I hope)
 										form.name_action_selected = 'save_device';
 										return utils
-                      .post(nextURL, jar, form, loginOptions)
+                      .post(Referer, jar, form, loginOptions)
                       .then(utils.saveCookies(jar));
 									})
                   .then(function (res) {
-                    const headers = res.headers;
+                    var headers = res.headers;
 										if (!headers.location && res.body.indexOf('Review Recent Login') > -1) 
                       throw { error: "Something went wrong with review recent login." };
-                    const appState = utils.getAppState(jar);
+                    var appState = utils.getAppState(jar);
 					// Simply call loginHelper because all it needs is the jar
 					// and will then complete the login process
                     return loginHelper(appState, email, password, loginOptions, callback);
@@ -394,12 +394,7 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
     mainPromise = utils
       .get("https://www.facebook.com/", null, null, globalOptions, null, { noRef: true })
       .then(utils.saveCookies(jar))
-      .then(makeLogin(jar, email, password, globalOptions, callback, prCallback))
-      .then(function () {
-        return utils
-          .get('https://www.facebook.com/', jar, null, globalOptions)
-          .then(utils.saveCookies(jar));
-      });
+      .then(makeLogin(jar, email, password, globalOptions, callback, prCallback));
   }
 
   var ctx = null;
