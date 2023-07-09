@@ -249,10 +249,10 @@ function makeLogin(jar, email, password, loginOptions, callback, prCallback) {
                 return v.val && v.val.length;
               });
               var form = utils.arrToForm(arr);
-              if (html.includes('.com/checkpoint/?next')) {
+              if (html.includes('.com/checkpoint/?next') == false) {
                 function submit2FA(code) {
                   var cb;
-                  var rtPromise = new Promise(function (resolve, reject) {
+                  var rtPromise = new Promise(function (resolve) {
                     cb = function (err, api) {
                       resolve(callback(err, api));
                     }
@@ -333,28 +333,42 @@ function makeLogin(jar, email, password, loginOptions, callback, prCallback) {
                 else 
                   form['submit[This Is Okay]'] = "This Is Okay";
 
-                return utils
-                  .post(Referer, jar, form, loginOptions)
-									.then(utils.saveCookies(jar))
-									.then(function () {
-										// Use the same form (safe I hope)
-										form.name_action_selected = 'save_device';
-										return utils
-                      .post(Referer, jar, form, loginOptions)
-                      .then(utils.saveCookies(jar));
-									})
-                  .then(function (res) {
-                    var headers = res.headers;
-										if (!headers.location && res.body.indexOf('Review Recent Login') > -1) 
-                      throw { error: "Something went wrong with review recent login." };
-                    var appState = utils.getAppState(jar);
-					// Simply call loginHelper because all it needs is the jar
-					// and will then complete the login process
-                    return loginHelper(appState, email, password, loginOptions, callback);
-									})
-                  .catch(function (e) {
-										return callback(e);
+                function submitNot2FA() {
+                  var cb;
+                  var rtPromise = new Promise(function (resolve) {
+                    cb = function (err, api) {
+                      resolve(callback(err, api));
+                    }
                   });
+
+                  utils
+                    .post(Referer, jar, form, loginOptions)
+                    .then(utils.saveCookies(jar))
+                    .then(function () {
+                      // Use the same form (safe I hope)
+                      form.name_action_selected = 'save_device';
+                      return utils
+                        .post(Referer, jar, form, loginOptions)
+                        .then(utils.saveCookies(jar));
+									})
+                    .then(function (res) {
+                      var headers = res.headers;
+                      if (!headers.location && res.body.includes('Review Recent Login')) 
+                        throw { error: "Something went wrong with review recent login." };
+                      var appState = utils.getAppState(jar);
+              // Simply call loginHelper because all it needs is the jar
+              // and will then complete the login process
+                      return loginHelper(appState, email, password, loginOptions, cb);
+                    })
+                    .catch(function (e) {
+                      return cb(e);
+                    });
+                  return rtPromise;
+                }
+                throw {
+                  error: 'submitNot2FA',
+                  continue: submitNot2FA()
+                }
               }
             });
         }
@@ -363,7 +377,7 @@ function makeLogin(jar, email, password, loginOptions, callback, prCallback) {
           .get('https://www.facebook.com/', jar, null, loginOptions)
           .then(utils.saveCookies(jar));
       });
-  };
+  }
 }
 
 // Helps the login
