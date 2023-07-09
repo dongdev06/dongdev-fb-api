@@ -249,7 +249,7 @@ function makeLogin(jar, email, password, loginOptions, callback, prCallback) {
                 return v.val && v.val.length;
               });
               var form = utils.arrToForm(arr);
-              if (html.includes('.com/checkpoint/?next') == false) {
+              if (html.includes('.com/checkpoint/?next')) {
                 function submit2FA(code) {
                   var cb;
                   var rtPromise = new Promise(function (resolve) {
