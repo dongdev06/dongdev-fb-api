@@ -470,8 +470,7 @@ function login(loginData, options, callback) {
   var prCallback;
   var returnPromise = new Promise(function (resolve, reject) {
     prCallback = function (error, api) {
-      if (error) reject(error);
-      resolve(api);
+      api ? resolve(api) : reject(error);
     };
   });
   
