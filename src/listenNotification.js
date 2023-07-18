@@ -38,7 +38,7 @@ function notification(http, ctx, count, loopMs, callback) {
       .post('https://www.facebook.com/api/graphql/', ctx.jar, form)
       .then(utils.parseAndCheckLogin(ctx, http))
       .then(function (data) {
-        return callback(formatDataGraph(data.data));
+        return callback(null, formatDataGraph(data.data));
       })
       .catch(function (err) {
         log.error('listenNotification', err);
