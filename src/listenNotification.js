@@ -63,13 +63,6 @@ function notification(http, ctx, count, loopMs, callback) {
 
 module.exports = function (http, api, ctx) {
   return function GraphNoti(count, loopMs, callback) {
-    var cb;
-    var rtPromise = new Promise(function (resolve, reject) {
-      cb = function (error, rCb) {
-        rCb ? resolve(rCb) : reject(error);
-      }
-    });
-
     if (typeof count == 'function') {
       callback = count;
       count = 5;
@@ -78,16 +71,17 @@ module.exports = function (http, api, ctx) {
       callback = loopMs;
       loopMs = 60000;
     }
-    if (typeof callback != 'function') cb('callback is not a function');
+    if (typeof callback != 'function') {
+      var error = new Error('callback is not a function');
+      return error;
+    }
 
     try {
       var stopListen = notification(http, ctx, count, loopMs, callback);
-      cb(null, stopListen);
+      return stopListen;
     } catch (err) {
       log.error('listenNotification', err);
-      cb(err);
+      return err;
     }
-
-    return rtPromise;
   }
 }
