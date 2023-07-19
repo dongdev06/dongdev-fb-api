@@ -7,7 +7,6 @@ function formatGraphResponse(data) {
   var Obj = [];
   var convertMS = function (ms, date) {
     var time = (date - ms) / 1000;
-    console.log(time);
     return time;
   };
   var edges = data.viewer.notifications_page.edges;
