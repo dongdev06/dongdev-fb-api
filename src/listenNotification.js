@@ -3,82 +3,75 @@
 var utils = require('../utils.js');
 var log = require('npmlog');
 
-function notification(http, ctx, count, loopMs, callback) {
-  if (utils.getType(count) != 'Number') count = 5;
-  if (utils.getType(loopMs) != 'Number') loopMs = 60000;
+function formatGraphResponse(data) {
+  var Obj = [];
+  var convertMS = function (ms, date) {
+    var time = (date - ms) / 1000;
+    console.log(time);
+    return time;
+  };
+  var edges = data.viewer.notifications_page.edges;
 
-  var getMinute = (timeMs) => {
-    var ms = timeMs.getTime();
-    return Math.ceil(((new Date()).getTime() - ms) / loopMs);
-  }
-
-  function formatDataGraph(data) {
-    var res = data.viewer.notifications_page.edges;
-    var Obj = [];
-
-    for (let i of res) {
-      if (i.node.row_type != 'NOTIFICATION') continue;
-      var timestamp = i.node.notif.creation_time.timestamp * 1000;
-      if (getMinute(new Date(timestamp)) <= 1) continue;
-      Obj.push({
-        id: i.node.notif.notif_id,
-        type: i.node.notif.notif_type,
-        body: i.node.notif.body,
-        url: i.node.notif.url,
-        attachments: i.node.notif.notif_attachments,
-        timestamp
-      });
+  for (let res of edges) {
+    res = res.node;
+    if (res.row_type != 'NOTIFICATION') break;
+    var timestamp = res.creation_time.timestamp * 1000;
+    if (convertMS(timestamp, Date.now()) > 60) break;
+    var data = {
+      id: res.notif.id,
+      noti_id: res.notif.notif_id,
+      type: res.notif.notif_type,
+      body: res.notif.body,
+      url: res.notif.url,
+      timestamp
     }
-
-    return Obj;
+    Obj.push(data);
   }
   
-  var interval = setInterval(function (form) {
-    http
-      .post('https://www.facebook.com/api/graphql/', ctx.jar, form)
-      .then(utils.parseAndCheckLogin(ctx, http))
-      .then(function (data) {
-        return callback(null, formatDataGraph(data.data));
-      })
-      .catch(function (err) {
-        log.error('listenNotification', err);
-        return callback(err);
-      });
-  }, loopMs, {
-    fb_api_req_friendly_name: "CometNotificationsDropdownQuery",
-    fb_api_caller_class: "RelayModern",
-    doc_id: "5025284284225032",
-    variables: JSON.stringify({
-      count,
-      environment: "MAIN_SURFACE",
-      menuUseEntryPoint: true,
-      scale: 1
-    })
-  });
-
-  return function stopListen() {
-    return clearInterval(interval);
-  }
+  return Obj;
 }
 
 module.exports = function (http, api, ctx) {
-  return function GraphNoti(count, loopMs, callback) {
-    if (typeof count == 'function') {
-      callback = count;
-      count = 5;
+  function listen(callback) {
+    var interval = setInterval(function (form) {
+      return http
+        .post('https://www.facebook.com/api/graphql/', ctx.jar, form)
+        .then(utils.parseAndCheckLogin(ctx, http))
+        .then(function (res) {
+          if (res.error) throw res;
+          return callback(null, formatGraphResponse(res.data));
+        })
+        .catch(function (err) {
+          log.error('listenNotification', err);
+          return callback(err);
+        });
+    }, 60000, {
+      fb_api_req_friendly_name: "CometNotificationsDropdownQuery",
+      doc_id: "5025284284225032",
+      variables: JSON.stringify({
+        count: 15,
+        environment: "MAIN_SURFACE",
+        menuUseEntryPoint: true,
+        scale: 1
+      }),
+      server_timestamps: !0
+    });
+
+    return function stopListen() {
+      return clearInterval(interval);
     }
-    if (typeof loopMs == 'function') {
-      callback = loopMs;
-      loopMs = 60000;
-    }
+  }
+  
+  return function GraphNoti(callback) {
     if (typeof callback != 'function') {
       var error = new Error('callback is not a function');
+      log.error('listenNotification', error);
       return error;
     }
 
     try {
-      var stopListen = notification(http, ctx, count, loopMs, callback);
-      return stopListen;
+      var rCb = listen(callback);
+      return rCb;
     } catch (err) {
       log.error('listenNotification', err);
       return err;
