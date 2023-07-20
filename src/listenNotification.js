@@ -38,7 +38,16 @@ module.exports = function (http, api, ctx) {
         .then(utils.parseAndCheckLogin(ctx, http))
         .then(function (res) {
           if (res.error) throw res;
-          return callback(null, formatGraphResponse(res.data));
+          return http
+            .post('https://www.facebook.com/ajax/navigation/', ctx.jar, {
+              client_previous_actor_id: '',
+              route_url: '/notifications',
+              routing_namespace: 'fb_comet'
+            })
+            .then(utils.parseAndCheckLogin(ctx, http))
+            .then(function () {
+              return callback(null, formatGraphResponse(res.data));
+            });
         })
         .catch(function (err) {
           log.error('listenNotification', err);
