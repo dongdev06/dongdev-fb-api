@@ -13,8 +13,8 @@ function formatGraphResponse(data) {
 
   for (let res of edges) {
     res = res.node;
-    if (res.row_type != 'NOTIFICATION') break;
-    var timestamp = res.creation_time.timestamp * 1000;
+    if (res.row_type !== 'NOTIFICATION') continue;
+    var timestamp = res.notif.creation_time.timestamp * 1000;
     if (convertMS(timestamp, Date.now()) > 60) break;
     var data = {
       id: res.notif.id,
@@ -45,12 +45,12 @@ module.exports = function (http, api, ctx) {
           return callback(err);
         });
     }, 60000, {
-      fb_api_req_friendly_name: "CometNotificationsDropdownQuery",
-      doc_id: "5025284284225032",
+      fb_api_req_friendly_name: "CometNotificationsRootQuery",
+      doc_id: "6663491207045267",
       variables: JSON.stringify({
         count: 15,
         environment: "MAIN_SURFACE",
-        menuUseEntryPoint: true,
+        filter_tokens: ["Cg8CZnQPA2FsbAE="],
         scale: 1
       }),
       server_timestamps: !0
