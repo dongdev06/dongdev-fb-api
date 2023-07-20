@@ -22,8 +22,7 @@ module.exports = function (defaultFuncs, api, ctx) {
     var cb;
     var returnPromise = new Promise(function (resolve, reject) {
       cb = function (err, resData) {
-        if (err) reject(err);
-        resolve(resData);
+        resData ? resolve(resData) : reject(err);
       }
     });
 
@@ -33,6 +32,7 @@ module.exports = function (defaultFuncs, api, ctx) {
     }
     if (Array.isArray(size) == false && isNaN(parseInt(size)) == false) size = [size, size];
     if (Array.isArray(size) && size.length == 1) size = [size[0], size[0]];
+    else size = [1500, 1500];
     if (typeof callback == 'function') cb = callback;
     if (Array.isArray(userIDs) == false) userIDs = [userIDs];
     var [height, width] = size;
