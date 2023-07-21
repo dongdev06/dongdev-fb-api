@@ -11,8 +11,7 @@ const url = require("url");
 function setProxy(proxy) {
   if (typeof proxy == 'string')
     request = bluebird.promisify(require("request").defaults({ jar: true, proxy }));
-  else 
-    request = bluebird.promisify(require("request").defaults({ jar: true }));
+  else request = request;
   return;
 }
 
@@ -29,12 +28,10 @@ function getHeaders(url, options, ctx, customHeader) {
 	if (customHeader) {
 		Object.assign(headers, customHeader);
 	}
-  if (customHeader && customHeader.noRef) {
+  if (customHeader && customHeader.noRef) 
     delete headers.Referer;
-  }
-	if (ctx && ctx.region) {
-		headers["X-MSGR-Region"] = ctx.region;
-	}
+	if (ctx && ctx.region) 
+    headers["X-MSGR-Region"] = ctx.region;
 
 	return headers;
 }
