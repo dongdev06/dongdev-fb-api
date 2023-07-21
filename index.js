@@ -4,7 +4,6 @@ var utils = require("./utils");
 var cheerio = require("cheerio");
 var log = require("npmlog");
 var defaultLogRecordSize = 100;
-
 log.maxRecordSize = defaultLogRecordSize;
 
 function setOptions(globalOptions, options) {
@@ -231,7 +230,9 @@ function makeLogin(jar, email, password, loginOptions, callback, prCallback) {
 
         // This means the account has login approvals turned on.
         if (headers.location.includes('.com/checkpoint/')) {
-          log.info("login", "You have login approvals turned on.");;
+          log.info("login", "You have login approvals turned on.");
+          if (callback == prCallback) 
+            throw { error: 'Promise is not supported for login code verification' };
           var Referer = headers.location;
 
           return utils
@@ -374,7 +375,7 @@ function makeLogin(jar, email, password, loginOptions, callback, prCallback) {
         }
 
         return utils
-          .get('https://www.facebook.com/', jar, null, loginOptions)
+          .get('https://www.facebook.com/', jar, null, loginOptions, null, { noRef: true })
           .then(utils.saveCookies(jar));
       });
   }
@@ -400,7 +401,6 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
   } else {
     // Make it easier to log in with email (maybe ~~)
     setOptions(globalOptions, {
-      forceLogin: true,
       userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
     });
     // Open the main page, then we login with the given credentials and finally
