@@ -2,7 +2,7 @@
 
 var utils = require("./utils");
 var cheerio = require("cheerio");
-var log = require("npmlog");
+var log = require('npmlog');
 var defaultLogRecordSize = 100;
 log.maxRecordSize = defaultLogRecordSize;
 
