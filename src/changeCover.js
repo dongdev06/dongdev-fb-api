@@ -72,7 +72,7 @@ module.exports = function (http, api, ctx) {
           .then(utils.parseAndCheckLogin(ctx, http));
       })
       .then(function (res) {
-        if (res.error) throw res;
+        if (res.errors) throw res;
         return cb(null, {
           url: res.data.user_update_cover_photo.user.cover_photo.photo.url
         });
