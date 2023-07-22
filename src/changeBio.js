@@ -43,7 +43,6 @@ module.exports = function (http, api, ctx) {
         scale: 1
       })
     }
-
     http
       .post("https://www.facebook.com/api/graphql/", ctx.jar, form)
       .then(utils.parseAndCheckLogin(ctx, http))
