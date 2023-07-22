@@ -38,9 +38,6 @@ function setOptions(globalOptions, options) {
       case 'forceLogin':
         globalOptions.forceLogin = Boolean(options.forceLogin);
         break;
-      case 'userAgent':
-        globalOptions.userAgent = options.userAgent;
-        break;
       case 'autoMarkDelivery':
         globalOptions.autoMarkDelivery = Boolean(options.autoMarkDelivery);
         break;
