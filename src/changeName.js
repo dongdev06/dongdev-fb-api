@@ -58,7 +58,6 @@ module.exports = function (http, api, ctx) {
       })
       .then(utils.parseAndCheckLogin(ctx, http))
       .then(function (res) {
-        console.log(JSON.stringify(res.data, null, 2));
         if (res.errors) throw res;
         else if (res.data.fxim_update_identity_name.error) 
           throw res.data.fxim_update_identity_name.error;
