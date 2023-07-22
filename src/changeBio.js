@@ -3,39 +3,31 @@
 var utils = require("../utils");
 var log = require("npmlog");
 
-module.exports = function (defaultFuncs, api, ctx) {
+module.exports = function (http, api, ctx) {
   return function changeBio(bio, publish, callback) {
-    var resolveFunc = function () { };
-    var rejectFunc = function () { };
-    var returnPromise = new Promise(function (resolve, reject) {
-      resolveFunc = resolve;
-      rejectFunc = reject;
+    var cb;
+    var rtPromise = new Promise(function (resolve, reject) {
+      cb = function (error) {
+        error ? reject(error): resolve();
+      }
     });
 
-    if (!callback) {
-      if (utils.getType(publish) == "Function" || utils.getType(publish) == "AsyncFunction") {
-        callback = publish;
-      } else {
-        callback = function (err) {
-          if (err) {
-            return rejectFunc(err);
-          }
-          resolveFunc();
-        };
-      }
+    if (typeof bio == 'function') {
+      callback = bio;
+      bio = '';
     }
-
-    if (utils.getType(publish) != "Boolean") {
+    if (typeof bio == 'boolean') {
+      publish = bio;
+      bio = '';
+    }
+    if (typeof publish == 'function') {
+      callback = publish;
       publish = false;
     }
-
-    if (utils.getType(bio) != "String") {
-      bio = "";
-      publish = false;
-    }
+    if (typeof publish != 'boolean') publish = false;
+    if (typeof callback == 'function') cb = callback;
 
     var form = {
-      fb_api_caller_class: "RelayModern",
       fb_api_req_friendly_name: "ProfileCometSetBioMutation",
       // This doc_is is valid as of May 23, 2020
       doc_id: "2725043627607610",
@@ -49,29 +41,21 @@ module.exports = function (defaultFuncs, api, ctx) {
         hasProfileTileViewID: false,
         profileTileViewID: null,
         scale: 1
-      }),
-      av: ctx.userID
-    };
+      })
+    }
 
-    defaultFuncs
-      .post(
-        "https://www.facebook.com/api/graphql/",
-        ctx.jar,
-        form
-      )
-      .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
-      .then(function (resData) {
-        if (resData.errors) {
-          throw resData;
-        }
-
-        return callback();
+    http
+      .post("https://www.facebook.com/api/graphql/", ctx.jar, form)
+      .then(utils.parseAndCheckLogin(ctx, http))
+      .then(function (res) {
+        if (res.errors) throw resData;
+        return cb();
       })
       .catch(function (err) {
         log.error("changeBio", err);
-        return callback(err);
+        return cb(err);
       });
 
-    return returnPromise;
-  };
-};
+    return rtPromise;
+  }
+}
