@@ -3,45 +3,72 @@
 var utils = require('./../utils.js');
 var log = require('npmlog');
 
-module.exports = function (defaultFuncs, api, ctx) {
-  return function chanegName(Obj, password, format, callback) {
+module.exports = function (http, api, ctx) {
+  return function changeName(data, format, callback) {
     var cb;
-    var returnPromise = new Promise(function (resolve, reject) {
-      cb = function (err) {
-        if (err) reject(err);
-        resolve();
+    var rtPromise = new Promise(function (resolve, reject) {
+      cb = function (error) {
+        error ? reject(error) : resolve();
       }
     });
 
-    if (!Obj.first_name || !Obj.last_name)
+    if (typeof data == 'function') {
+      callback = data;
+      data = null;
+    }
     if (typeof format == 'function') {
       callback = format;
       format = 'complete';
     }
-    if (!['complete', 'standard', 'reversed'].includes(format)) format = 'complete';
-    if (!password || typeof password == 'function' || password == format) return cb('Error: password is not defined');
+    if (typeof callback == 'function') cb = callback;
+    if (utils.getType(data) != 'Object') 
+      return cb('data is not an object');
 
-    var form = {
-      display_format: format,
-      save_password: password,
-      primary_first_name: Obj.first_name,
-      primary_middle_name: !!Obj.middle_name == true ? Obj.middle_name : '',
-      primary_last_name: Obj.last_name
+    try {
+      var full_name;
+      if (format == 'complete') full_name = `${data.last_name} ${data.middle_name || ''} ${data.first_name}`;
+      else if (format == 'standard') full_name = `${data.last_name} ${data.first_name}`;
+      else if (format == 'reversed') full_name = `${data.first_name} ${data.middle_name || ''} ${data.last_name}`;
+      else full_name = `${data.last_name} ${data.middle_name || ''} ${data.first_name}`;
+      var form = {
+        fb_api_caller_class: 'RelayModern',
+        fb_api_req_friendly_name: 'useFXIMUpdateNameMutation',
+        variables: JSON.stringify({
+          client_mutation_id: utils.getGUID(),
+          family_device_id: "device_id_fetch_datr",
+          identity_ids: [ctx.userID],
+          full_name: full_name, 
+          first_name: data.first_name,
+          middle_name: data.middle_name || '', 
+          last_name: data.last_name,
+          interface: 'FB_WEB'
+        }),
+        server_timestamps: true,
+        doc_id: '5763510853763960'
+      }
+    } catch (error) {
+      log.error('changeName', error);
+      return cb(error);
     }
-    defaultFuncs
-      .post('https://www.facebook.com/ajax/settings/account/name.php', ctx.jar, form, ctx.globalOptions)
-      .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
+
+    http
+      .post('https://accountscenter.facebook.com/api/graphql/', ctx.jar, form, null, null, {
+        Origin: 'https://accountscenter.facebook.com',
+        Referer: `https://accountscenter.facebook.com/profiles/${ctx.userID}/name`
+      })
+      .then(utils.parseAndCheckLogin(ctx, http))
       .then(function (res) {
-        if (res.jsmods.require[1][3][1]) {
-          return cb('Error: password is wrong or not defined');
-        }
+        console.log(JSON.stringify(res.data, null, 2));
+        if (res.errors) throw res;
+        else if (res.data.fxim_update_identity_name.error) 
+          throw res.data.fxim_update_identity_name.error;
         return cb();
       })
-      .catch((err) => {
+      .catch(function (err) {
         log.error('changeName', err);
         return cb(err);
-      });
-
-    return returnPromise;
+      })
+    
+    return rtPromise;
   }
 }
