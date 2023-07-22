@@ -36,8 +36,9 @@
 * [`api.httpPostFormData(url, form, [customHeader], [callback], [notAPI])`](#apihttppostformdataurl-form-customheader-callback-notapi) ⇒ <code>Promise</code>
 * [~~`api.listen([callback])`~~](#apilistencallback) ⇒ <code>Promise</code>
 * [`api.listenMqtt([callback])`](#apilistenmqttcallback) ⇒ <code>Promise</code>
+* [`api.listenNotification(callback)`](#listennotification) ⇒ <code>Function</code>
 * [`api.logout([callback])`](#apilogoutcallback) ⇒ <code>Promise</code>
-* [`api.markAsDelivered(threadID, messageID, [callback]`](#apimarkasdeliveredthreadid-messageid-callback) ⇒ <code>Promise</code>
+* [`api.markAsDelivered(threadID, messageID, [callback])`](#apimarkasdeliveredthreadid-messageid-callback) ⇒ <code>Promise</code>
 * [`api.markAsRead(threadID, [read, [callback]])`](#apimarkasreadthreadid-read-callback) ⇒ <code>Promise</code>
 * [`api.markAsReadAll([callback])`](#apimarkasreadallcallback) ⇒ <code>Promise</code>
 * [`api.markAsSeen([seenTimestamp], [callback])`](#apimarkasseenseentimestamp-callback) ⇒ <code>Promise</code>
@@ -1902,5 +1903,17 @@ __Arguments__
 
 * `messageID`: Message ID you want to unsend.
 * `callback(err)`: A callback called when the query is done (with an error or with null).
+
+---------------------------------------
+
+---------------------------------------
+
+<a name="listenNotification"></a>
+### api.listenNotification(callback)
+```js
+var stopListen = api.listenNotification(function (error, noti) {
+  noti ? console.log(noti) : stopListen();
+});
+```
 
 ---------------------------------------
