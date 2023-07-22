@@ -42,7 +42,7 @@ function formatDataGraph(data) {
         email: res.email || null,
         website: res.website || null,
         follower: !!res.subscribers == true ? res.subscribers.summary.total_count : null,
-        lover: !!res.significant_other == true ? res.significant_other.name : null,
+        lover: res.significant_other || null,
         cover: !!res.cover == true ? res.cover.source : null,
         first_name: res.first_name || null,
         middle_name: res.middle_name || null,
