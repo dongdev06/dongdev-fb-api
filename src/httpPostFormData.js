@@ -39,7 +39,7 @@ module.exports = function (defaultFuncs, api, ctx) {
         });
     } else {
       defaultFuncs
-        .postFormData(url, ctx.jar, form, ctx.globalOptions, ctx, customHeader)
+        .postFormData(url, ctx.jar, form, {}, ctx, customHeader)
         .then(function (resData) {
           return cb(null, String(resData.body));
         })
