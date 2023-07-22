@@ -26,6 +26,10 @@ module.exports = function (http, api, ctx) {
 
     try {
       var full_name;
+      if (!data.first_name || !data.last_name) {
+        log.error('changeName', 'name is not be accepted');
+        return cb('name is not be accepted');
+      }
       if (format == 'complete') full_name = `${data.last_name} ${data.middle_name || ''} ${data.first_name}`;
       else if (format == 'standard') full_name = `${data.last_name} ${data.first_name}`;
       else if (format == 'reversed') full_name = `${data.first_name} ${data.middle_name || ''} ${data.last_name}`;
