@@ -47,7 +47,7 @@ module.exports = function (http, api, ctx) {
       .post("https://www.facebook.com/api/graphql/", ctx.jar, form)
       .then(utils.parseAndCheckLogin(ctx, http))
       .then(function (res) {
-        if (res.errors) throw resData;
+        if (res.errors) throw res;
         return cb();
       })
       .catch(function (err) {
