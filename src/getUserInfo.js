@@ -33,9 +33,10 @@ function formatDataGraph(data) {
   var Obj = {};
   for (let v in data) {
     var res = data[v];
-    if (res.error) Obj[v] = res.error;
+    if (res.error) Obj[res.id] = {};
     else {
-      Obj[v] = {
+      Obj[res.id] = {
+        id: res.id,
         name: res.name,
         shortName: res.short_name || null,
         verified: res.verified != false ? true : false,
@@ -77,22 +78,47 @@ function formatDataGraph(data) {
   return Obj;
 }
 
-module.exports = function (defaultFuncs, api, ctx) {
-  async function getData(userIDs, cb) {
-    var form = {};
-    for (let userID of userIDs) {
-      var res = await utils.parseAndCheckLogin(ctx, defaultFuncs)(await defaultFuncs.get(`https://graph.facebook.com/v1.0/${userID}?fields=name,verified,cover,first_name,email,about,birthday,gender,website,hometown,link,location,quotes,relationship_status,significant_other,username,subscribers.limite(0),short_name,last_name,middle_name,education,picture,work,languages,favorite_athletes&access_token=${ctx.access_token}`, ctx.jar, null, ctx.globalOptions));
-      form[userID] = res;
+module.exports = function (http, api, ctx) {
+  function handleGetData(userIDs) {
+    var cb;
+    var uploads = [];
+    var rtPromise = new Promise(function (resolve, reject) {
+      cb = function (error, data) {
+        data ? resolve(data) : reject(error);
+      }
+    });
+
+    for (let i = 0; i < userIDs.length; i++) {
+      var mainPromise = http
+        .get(`https://graph.facebook.com/v1.0/${userIDs[i]}?fields=name,verified,cover,first_name,email,about,birthday,gender,website,hometown,link,location,quotes,relationship_status,significant_other,username,subscribers.limite(0),short_name,last_name,middle_name,education,picture,work,languages,favorite_athletes&access_token=` + ctx.access_token, ctx.jar)
+        .then(utils.parseAndCheckLogin(ctx, http))
+        .then(function (res) {
+          return res;
+        })
+        .catch(function (err) {
+          return cb(err);
+        });
+      uploads.push(mainPromise);
     }
-    return cb(null, form);
+
+    // resolve all promise
+    Promise
+      .all(uploads)
+      .then(function (res) {
+        return cb(null, res);
+      })
+      .catch(function (err) {
+        return cb(err);
+      });
+ 
+    return rtPromise;
   }
   
   return function getUserInfo(userIDs, useGraph, callback) {
     var cb;
-    var returnPromise = new Promise(function (resolve, reject) {
-      cb = function (error, resData) {
-        if (error) reject(error);
-        resolve(resData);
+    var rtPromise = new Promise(function (resolve, reject) {
+      cb = function (error, data) {
+        data ? resolve(data) : reject(error);
       }
     });
 
@@ -104,19 +130,23 @@ module.exports = function (defaultFuncs, api, ctx) {
     if (Array.isArray(userIDs) == false) userIDs = [userIDs];
 
     if (useGraph) {
-      if (ctx.access_token == 'NONE') return cb('Error: cant get access_token, please let the "useGraph" feature is false');
-      getData(userIDs, function (err, res) {
-        if (err) return cb(err);
-        return cb(null, formatDataGraph(res));
-      });
+      if (ctx.access_token == 'NONE') return cb('Cant get access_token, please let the "useGraph" feature is false');
+      handleGetData(userIDs)
+        .then(function (res) {
+          return cb(null, formatDataGraph(res));
+        })
+        .catch(function (err) {
+          log.error('getUserInfo', err);
+          return cb(err);
+        });
     } else {
       var form = {};
       userIDs.map(function(v, i) {
         form["ids[" + i + "]"] = v;
       });
-      defaultFuncs
+      http
         .post("https://www.facebook.com/chat/user_info/", ctx.jar, form)
-        .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
+        .then(utils.parseAndCheckLogin(ctx, http))
         .then(function(resData) {
           if (resData.error) {
             log.error("getUserInfo", resData.error);
@@ -130,6 +160,6 @@ module.exports = function (defaultFuncs, api, ctx) {
         });
     }
 
-    return returnPromise;
+    return rtPromise;
   }
 }
