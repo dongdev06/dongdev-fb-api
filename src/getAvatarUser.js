@@ -3,24 +3,47 @@
 var utils = require('./../utils.js');
 var log = require('npmlog');
 
-module.exports = function (defaultFuncs, api, ctx) {
-  async function handleGet(userIDs, height, width, cb) {
-    var form = {};
-    for (let userID of userIDs) {
-      try {
-        var res = await utils.parseAndCheckLogin(ctx, defaultFuncs)(await defaultFuncs.get(`https://graph.facebook.com/${userID}/picture?height=${height}&width=${width}&redirect=false&access_token=${ctx.access_token}`, ctx.jar, null, ctx.globalOptions));
-        form[userID] = res.data.url; 
-      } catch (e) {
-        return cb(e);
+module.exports = function (http, api, ctx) {
+  function handleAvatar(userIDs, height, width) {
+    var cb;
+    var uploads = [];
+    var rtPromise = new Promise(function (resolve, reject) {
+      cb = function (error, data) {
+        data ? resolve(data) : reject(error);
       }
+    });
+
+    for (let i = 0; i < userIDs.length; i++) {
+      var mainPromise = http
+        .get(`https://graph.facebook.com/${userIDs[i]}/picture?height=${height}&width=${width}&redirect=false&access_token=` + ctx.access_token, ctx.jar)
+        .then(utils.parseAndCheckLogin(ctx, http))
+        .then(function (res) {
+          return res.data.url;
+        })
+        .catch(function (err) {
+          return cb(err);
+        });
+      uploads.push(mainPromise);
     }
 
-    return cb(null, form);
+    // resolve all promises
+    Promise
+      .all(uploads)
+      .then(function (res) {
+        var data = {};
+        for (let i = 0; i < userIDs.length; i++) data[userIDs[i]] = res[i];
+        return cb(null, data);
+      })
+      .catch(function (err) {
+        return cb(err);
+      });
+
+    return rtPromise;
   }
   
   return function getAvatarUser(userIDs, size, callback) {
     var cb;
-    var returnPromise = new Promise(function (resolve, reject) {
+    var rtPromise = new Promise(function (resolve, reject) {
       cb = function (err, resData) {
         resData ? resolve(resData) : reject(err);
       }
@@ -36,21 +59,17 @@ module.exports = function (defaultFuncs, api, ctx) {
     if (typeof callback == 'function') cb = callback;
     if (Array.isArray(userIDs) == false) userIDs = [userIDs];
     var [height, width] = size;
-
-    try {
-      if (ctx.access_token == 'NONE') return cb('Error: cant get access_token');
-      handleGet(userIDs, height, width, function (err, data) {
-        if (err) {
-          log.error('handleGet', err);
-          return cb(err);
-        }
-        return cb(null, data);
+    if (ctx.access_token == 'NONE') return cb('Cant get access_token');
+    
+    handleAvatar(userIDs, height, width)
+      .then(function (res) {
+        return cb(null, res);
+      })
+      .catch(function (err) {
+        log.error('getAvatarUser', err);
+        return cb(err);
       });
-    } catch (e) {
-      log.error('getAvatarUser', e.message || e);
-      return cb(e);
-    }
 
-    return returnPromise;
+    return rtPromise;
   }
 }
