@@ -1394,7 +1394,6 @@ function decodeClientPayload(payload) {
 function getAppState(jar) {
 	return jar
 		.getCookies("https://www.facebook.com")
-		.concat(jar.getCookies("https://facebook.com"))
 		.concat(jar.getCookies("https://www.messenger.com"));
 }
 
