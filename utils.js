@@ -1,8 +1,7 @@
  /* eslint-disable no-prototype-builtins */
 "use strict";
 
-const bluebird = require("bluebird");
-let request = bluebird.promisify(require("request").defaults({ jar: true }));
+let request = require("request").defaults({ jar: true });
 const stream = require("stream");
 const log = require("npmlog");
 const querystring = require("querystring");
@@ -10,7 +9,7 @@ const url = require("url");
 
 function setProxy(proxy) {
   if (typeof proxy == 'string')
-    request = bluebird.promisify(require("request").defaults({ jar: true, proxy }));
+    request = require("request").defaults({ jar: true, proxy });
   else request = request;
   return;
 }
@@ -64,31 +63,39 @@ function get(url, jar, qs, options, ctx, customHeader) {
 		gzip: true
 	};
 
-	return request(op).then(function (res) {
-		return Array.isArray(res) ? res[0] : res;
-	});
+  var callback;
+  var returnPromise = new Promise(function (resolve, reject) {
+    callback = (error, data) => error != null ? reject(error) : resolve(data);
+  });
+  request(op, callback);
+
+	return returnPromise;
 }
 
 function post(url, jar, form, options, ctx, customHeader) {
-	const op = {
-		headers: getHeaders(url, options, ctx, customHeader),
-		timeout: 60000,
+	var op = {
+    headers: getHeaders(url, options, ctx, customHeader),
+    timeout: 60000,
 		url: url,
 		method: "POST",
 		form: form,
 		jar: jar,
 		gzip: true
-	};
+	}
 
-	return request(op).then(function (res) {
-		return Array.isArray(res) ? res[0] : res;
-	});
+	var callback;
+  var returnPromise = new Promise(function (resolve, reject) {
+    callback = (error, data) => error != null ? reject(error) : resolve(data);
+  });
+  request(op, callback);
+
+	return returnPromise;
 }
 
 function postFormData(url, jar, form, qs, options, ctx) {
-	const headers = getHeaders(url, options, ctx);
+	var headers = getHeaders(url, options, ctx);
 	headers["Content-Type"] = "multipart/form-data";
-	const op = {
+	var op = {
 		headers: headers,
 		timeout: 60000,
 		url: url,
@@ -99,9 +106,13 @@ function postFormData(url, jar, form, qs, options, ctx) {
 		gzip: true
 	};
 
-	return request(op).then(function (res) {
-		return Array.isArray(res) ? res[0] : res;
-	});
+	var callback;
+  var returnPromise = new Promise(function (resolve, reject) {
+    callback = (error, data) => error != null ? reject(error) : resolve(data);
+  });
+  request(op, callback);
+
+	return returnPromise;
 }
 
 function padZeros(val, len) {
@@ -1137,74 +1148,56 @@ function makeDefaults(html, userID, ctx) {
 	};
 }
 
-function parseAndCheckLogin(ctx, defaultFuncs, retryCount) {
-	if (retryCount == undefined) {
-		retryCount = 0;
-	}
+function parseAndCheckLogin(ctx, http, retryCount) {
+  var delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  var _try = (tryData) => new Promise(function (resolve, reject) {
+    try {
+      resolve(tryData());
+    } catch (error) {
+      reject(error);
+    }
+  });
+  if (retryCount == undefined) retryCount = 0;
+  
 	return function (data) {
-		return bluebird.try(function () {
-			log.verbose("parseAndCheckLogin", data.body);
-			if (data.statusCode >= 500 && data.statusCode < 600) {
-				if (retryCount >= 5) {
-					const err = new Error("Request retry failed. Check the `res` and `statusCode` property on this error.");
+    function any() {
+      log.verbose("parseAndCheckLogin", data.body);
+      if (data.statusCode >= 500 && data.statusCode < 600) {
+        if (retryCount >= 5) {
+          const err = new Error("Request retry failed. Check the `res` and `statusCode` property on this error.");
 					err.statusCode = data.statusCode;
 					err.res = data.body;
 					err.error = "Request retry failed. Check the `res` and `statusCode` property on this error.";
 					throw err;
-				}
-				retryCount++;
-				const retryTime = Math.floor(Math.random() * 5000);
-				log.warn(
-					"parseAndCheckLogin",
-					"Got status code " +
-					data.statusCode +
-					" - " +
-					retryCount +
-					". attempt to retry in " +
-					retryTime +
-					" milliseconds..."
-				);
-				const url =
-					data.request.uri.protocol +
-					"//" +
-					data.request.uri.hostname +
-					data.request.uri.pathname;
-				if (
-					data.request.headers["Content-Type"].split(";")[0] ===
-					"multipart/form-data"
-				) {
-					return bluebird
-						.delay(retryTime)
-						.then(function () {
-							return defaultFuncs.postFormData(
-								url,
-								ctx.jar,
-								data.request.formData,
-								{}
-							);
-						})
-						.then(parseAndCheckLogin(ctx, defaultFuncs, retryCount));
-				}
-				else {
-					return bluebird
-						.delay(retryTime)
-						.then(function () {
-							return defaultFuncs.post(url, ctx.jar, data.request.formData);
-						})
-						.then(parseAndCheckLogin(ctx, defaultFuncs, retryCount));
-				}
-			}
-			if (data.statusCode !== 200)
-				throw new Error(
-					"parseAndCheckLogin got status code: " +
-					data.statusCode +
-					". Bailing out of trying to parse response."
-				);
-
-			let res = null;
+        }
+        retryCount++;
+        const retryTime = Math.floor(Math.random() * 5000);
+        log.warn("parseAndCheckLogin", "Got status code " + data.statusCode + " - " + retryCount + ". attempt to retry in " + retryTime + " milliseconds...");
+				const url = data.request.uri.protocol + "//" + data.request.uri.hostname + data.request.uri.pathname;
+        if (data.request.headers["Content-Type"].split(";")[0] === "multipart/form-data") {
+					return delay(retryTime)
+            .then(function () {
+              return http
+                .postFormData(url, ctx.jar, data.request.formData);
+            })
+            .then(parseAndCheckLogin(ctx, http, retryCount));
+        }
+        else {
+          return delay(retryTime)
+            .then(function () {
+              return http
+                .post(url, ctx.jar, data.request.formData);
+            })
+            .then(parseAndCheckLogin(ctx, http, retryCount));
+        }
+      }
+      if (data.statusCode !== 200)
+				throw new Error("parseAndCheckLogin got status code: " + data.statusCode + ". Bailing out of trying to parse response.");
+      
+      let res = null;
 			try {
 				res = JSON.parse(makeParsable(data.body));
-			} catch (e) {
+      } catch (e) {
 				const err = new Error("JSON.parse error. Check the `detail` property on this error.");
 				err.error = "JSON.parse error. Check the `detail` property on this error.";
 				err.detail = e;
@@ -1214,27 +1207,19 @@ function parseAndCheckLogin(ctx, defaultFuncs, retryCount) {
 
 			// In some cases the response contains only a redirect URL which should be followed
 			if (res.redirect && data.request.method === "GET") {
-				return defaultFuncs
+				return http
 					.get(res.redirect, ctx.jar)
-					.then(parseAndCheckLogin(ctx, defaultFuncs));
-			}
+					.then(parseAndCheckLogin(ctx, http));
+      }
 
 			// TODO: handle multiple cookies?
-			if (
-				res.jsmods &&
-				res.jsmods.require &&
-				Array.isArray(res.jsmods.require[0]) &&
-				res.jsmods.require[0][0] === "Cookie"
-			) {
-				res.jsmods.require[0][3][0] = res.jsmods.require[0][3][0].replace(
-					"_js_",
-					""
-				);
-				const cookie = formatCookie(res.jsmods.require[0][3], "facebook");
+			if (res.jsmods && res.jsmods.require && Array.isArray(res.jsmods.require[0]) && res.jsmods.require[0][0] === "Cookie") {
+        res.jsmods.require[0][3][0] = res.jsmods.require[0][3][0].replace("_js_", "");
+        const cookie = formatCookie(res.jsmods.require[0][3], "facebook");
 				const cookie2 = formatCookie(res.jsmods.require[0][3], "messenger");
 				ctx.jar.setCookie(cookie, "https://www.facebook.com");
 				ctx.jar.setCookie(cookie2, "https://www.messenger.com");
-			}
+      }
 
 			// On every request we check if we got a DTSG and we mutate the context so that we use the latest
 			// one for the next requests.
@@ -1259,7 +1244,8 @@ function parseAndCheckLogin(ctx, defaultFuncs, retryCount) {
 				throw err;
 			}
 			return res;
-		});
+		}
+		return _try(any);
 	};
 }
 
@@ -1452,4 +1438,4 @@ module.exports = {
 	getAdminTextMessageType,
 	setProxy,
   createAccess_token
-};
+}
