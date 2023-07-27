@@ -2,9 +2,8 @@
 
 var utils = require("../utils");
 var log = require("npmlog");
-var bluebird = require("bluebird");
 
-module.exports = function (defaultFuncs, api, ctx) {
+module.exports = function (http, api, ctx) {
   function handleUpload(image, callback) {
     var uploads = [];
 
@@ -14,14 +13,14 @@ module.exports = function (defaultFuncs, api, ctx) {
     };
 
     uploads.push(
-      defaultFuncs
+      http
         .postFormData(
           "https://upload.facebook.com/ajax/mercury/upload.php",
           ctx.jar,
           form,
           {}
         )
-        .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
+        .then(utils.parseAndCheckLogin(ctx, http))
         .then(function (resData) {
           if (resData.error) {
             throw resData;
@@ -32,7 +31,7 @@ module.exports = function (defaultFuncs, api, ctx) {
     );
 
     // resolve all promises
-    bluebird
+    Promise
       .all(uploads)
       .then(function (resData) {
         callback(null, resData);
@@ -110,22 +109,17 @@ module.exports = function (defaultFuncs, api, ctx) {
       form["thread_image_id"] = payload[0]["image_id"];
       form["thread_id"] = threadID;
 
-      defaultFuncs
+      http
         .post("https://www.facebook.com/messaging/set_thread_image/", ctx.jar, form)
-        .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
+        .then(utils.parseAndCheckLogin(ctx, http))
         .then(function (resData) {
-          // check for errors here
-
-          if (resData.error) {
-            throw resData;
-          }
-
+          if (resData.error) throw resData;
           return callback();
         })
         .catch(function (err) {
           log.error("changeGroupImage", err);
           return callback(err);
-        });
+        })
     });
 
     return returnPromise;
