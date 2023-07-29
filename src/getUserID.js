@@ -10,7 +10,7 @@ function format(res) {
     name: res.name,
     isVerified: res.is_verified,
     profileUrl: res.url,
-    avatar: res.profile_picture.uri
+    photoUrl: res.profile_picture.uri
   }
 }
 
