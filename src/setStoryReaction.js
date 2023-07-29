@@ -3,14 +3,11 @@
 var utils = require('../utils.js');
 var log = require('npmlog');
 
-module.exports = function (defaultFuncs, api, ctx) {
+module.exports = function (http, api, ctx) {
   return function setStoryReaction(storyID, react, callback) {
     var cb;
-    var returnPromise = new Promise(function (resolve, reject) {
-      cb = function (err) {
-        if (err) reject(err);
-        resolve()
-      }
+    var rtPromise = new Promise(function (resolve, reject) {
+      cb = error => error ? reject(error) : resolve();
     });
 
     if (typeof react == 'function') {
@@ -48,18 +45,18 @@ module.exports = function (defaultFuncs, api, ctx) {
       doc_id: '4826141330837571'
     }
 
-    defaultFuncs
-      .post('https://www.facebook.com/api/graphql/', ctx.jar, form, ctx.globalOptions)
-      .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
+    http
+      .post('https://www.facebook.com/api/graphql/', ctx.jar, form)
+      .then(utils.parseAndCheckLogin(ctx, http))
       .then(function (res) {
-        if (res.errors) {
-          log.error('setStoryReaction', res.errors);
-          return cb(res.errors);
-        }
+        if (res.errors) throw res;
         return cb();
       })
-      .catch(cb);
+      .catch(function (err) {
+        log.error('setPostReaction', err);
+        return cb(err);
+      });
 
-    return returnPromise;
+    return rtPromise;
   }
 }
