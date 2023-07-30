@@ -32,11 +32,11 @@ function formatData(data) {
 function formatDataGraph(data) {
   var Obj = {};
   for (let v in data) {
-    var res = data[v];
-    if (res.error) Obj[res.id] = {};
+    var { userID, res } = data[v];
+    if (res.error) Obj[userID] = {};
     else {
-      Obj[res.id] = {
-        id: res.id,
+      Obj[userID] = {
+        id: userID,
         name: res.name,
         shortName: res.short_name || null,
         verified: res.verified != false ? true : false,
@@ -83,9 +83,7 @@ module.exports = function (http, api, ctx) {
     var cb;
     var uploads = [];
     var rtPromise = new Promise(function (resolve, reject) {
-      cb = function (error, data) {
-        data ? resolve(data) : reject(error);
-      }
+      cb = (error, data) => data ? resolve(data) : reject(error);
     });
 
     for (let i = 0; i < userIDs.length; i++) {
@@ -93,10 +91,10 @@ module.exports = function (http, api, ctx) {
         .get(`https://graph.facebook.com/v1.0/${userIDs[i]}?fields=name,verified,cover,first_name,email,about,birthday,gender,website,hometown,link,location,quotes,relationship_status,significant_other,username,subscribers.limite(0),short_name,last_name,middle_name,education,picture,work,languages,favorite_athletes&access_token=` + ctx.access_token, ctx.jar)
         .then(utils.parseAndCheckLogin(ctx, http))
         .then(function (res) {
-          return res;
+          return { userID: userIDs[i], res }
         })
         .catch(function (err) {
-          return cb(err);
+          return { userID: userIDs[i], res: { error: 404 } }
         });
       uploads.push(mainPromise);
     }
@@ -117,9 +115,7 @@ module.exports = function (http, api, ctx) {
   return function getUserInfo(userIDs, useGraph, callback) {
     var cb;
     var rtPromise = new Promise(function (resolve, reject) {
-      cb = function (error, data) {
-        data ? resolve(data) : reject(error);
-      }
+      cb = (error, data) => data ? resolve(data) : reject(error);
     });
 
     if (typeof useGraph == 'function') {
@@ -130,7 +126,10 @@ module.exports = function (http, api, ctx) {
     if (Array.isArray(userIDs) == false) userIDs = [userIDs];
 
     if (useGraph) {
-      if (ctx.access_token == 'NONE') return cb('Cant get access_token, please let the "useGraph" feature is false');
+      if (ctx.access_token == 'NONE') {
+        log.error('getUserInfo', 'Cant get access_token, please let the "useGraph" feature is false');
+        return cb('Cant get access_token, please let the "useGraph" feature is false');
+      }
       handleGetData(userIDs)
         .then(function (res) {
           return cb(null, formatDataGraph(res));
@@ -147,12 +146,9 @@ module.exports = function (http, api, ctx) {
       http
         .post("https://www.facebook.com/chat/user_info/", ctx.jar, form)
         .then(utils.parseAndCheckLogin(ctx, http))
-        .then(function(resData) {
-          if (resData.error) {
-            log.error("getUserInfo", resData.error);
-            return cb(resData.error);
-          }
-          return cb(null, formatData(resData.payload.profiles));
+        .then(function(res) {
+          if (res.error || res.errors) throw res;
+          return cb(null, formatData(res.payload.profiles));
         })
         .catch(function(err) {
           log.error("getUserInfo", err);
