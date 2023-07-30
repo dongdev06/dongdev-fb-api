@@ -81,18 +81,19 @@ module.exports = function (http, api, ctx) {
       cb = (error, data) => data ? resolve(data) : reject(error);
     });
 
-    for (let i = 0; i < userIDs.length; i++) {
+    // Getting User Data From GraphAPI In The Loop
+    userIDs.map(function (userID) {
       var mainPromise = http
-        .get(`https://graph.facebook.com/v1.0/${userIDs[i]}?fields=name,verified,cover,first_name,email,about,birthday,gender,website,hometown,link,location,quotes,relationship_status,significant_other,username,subscribers.limite(0),short_name,last_name,middle_name,education,picture,work,languages,favorite_athletes&access_token=` + ctx.access_token, ctx.jar)
+        .get(`https://graph.facebook.com/v1.0/${userID}?fields=name,verified,cover,first_name,email,about,birthday,gender,website,hometown,link,location,quotes,relationship_status,significant_other,username,subscribers.limite(0),short_name,last_name,middle_name,education,picture,work,languages,favorite_athletes&access_token=` + ctx.access_token, ctx.jar)
         .then(utils.parseAndCheckLogin(ctx, http))
         .then(function (res) {
-          return { userID: userIDs[i], res }
+          return { userID, res }
         })
         .catch(function (err) {
-          return { userID: userIDs[i], res: { error: 404 } }
+          return { userID, res: { error: 404 } }
         });
-      uploads.push(mainPromise);
-    }
+      return uploads.push(mainPromise);
+    });
 
     // resolve all promise
     Promise
