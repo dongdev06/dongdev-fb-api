@@ -54,8 +54,9 @@ module.exports = function (http, api, ctx) {
       callback = size;
       size = [1500, 1500];
     }
-    if (Array.isArray(size) == false && utils.getType(Number(size)) == 'Number') size = [size, size];
-    else if (Array.isArray(size) && size.length == 1 && utils.getType(Number(size[0])) == 'Number') size = [size[0], size[0]];
+    if (Array.isArray(size) == false && typeof Number(size) == 'number') size = [size, size];
+    else if (Array.isArray(size) && size.length == 1 && typeof Number(size[0]) == 'number') size = [size[0], size[0]];
+    else if (Array.isArray(size) && size.length == 2 && typeof Number(size[0]) == 'number' && typeof Number(size[1]) == 'number') size = size;
     else size = [1500, 1500];
     if (typeof callback == 'function') cb = callback;
     if (Array.isArray(userIDs) == false) userIDs = [userIDs];
