@@ -493,7 +493,7 @@ function login(loginData, options, callback) {
     selfListenEvent: false,
     listenEvents: true,
     listenTyping: false,
-    updatePresence: false,
+    updatePresence: true,
     forceLogin: false,
     autoMarkDelivery: true,
     autoMarkRead: true,
