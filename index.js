@@ -162,11 +162,7 @@ function buildAPI(globalOptions, html, token, jar) {
     .readdirSync(__dirname + '/src/')
     .filter((v) => v.endsWith('.js'))
     .map(function (v) {
-      try {
-        return api[v.replace('.js', '')] = require('./src/' + v)(defaultFuncs, api, ctx);
-      } catch (_) {
-        // empty
-      }
+      api[v.replace('.js', '')] = require('./src/' + v)(defaultFuncs, api, ctx);
     });
 
   //Removing original `listen` that uses pull.
