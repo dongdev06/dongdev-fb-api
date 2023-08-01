@@ -471,9 +471,7 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
 function login(loginData, options, callback) {
   var prCallback;
   var returnPromise = new Promise(function (resolve, reject) {
-    prCallback = function (error, api) {
-      api ? resolve(api) : reject(error);
-    };
+   prCallback = (error, api) => api ? resolve(api) : reject(error);
   });
   
   if (typeof options == 'function') {
