@@ -15,7 +15,7 @@ module.exports = function (http, api, ctx) {
       react = 1;
     }
     if (typeof callback == 'function') cb = callback;
-    if (typeof react != 'number') react = 1;
+    if (typeof Number(react) != 'number') react = 1;
 
     var map = {
       1: '👍',
