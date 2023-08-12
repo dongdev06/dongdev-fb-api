@@ -3,43 +3,62 @@
 var utils = require("../utils");
 var log = require("npmlog");
 
-module.exports = function(defaultFuncs, api, ctx) {
-  return function resolvePhotoUrl(photoID, callback) {
-    var resolveFunc = function(){};
-    var rejectFunc = function(){};
-    var returnPromise = new Promise(function (resolve, reject) {
-      resolveFunc = resolve;
-      rejectFunc = reject;
+module.exports = function (http, api, ctx) {
+  function getPhotoUrls(photoIDs) {
+    var cb;
+    var uploads = [];
+    var rtPromise = new Promise(function (resolve, reject) {
+      cb = (error, photoUrl) => photoUrl ? resolve(photoUrl) : reject(error);
     });
 
-    if (!callback) {
-      callback = function (err, friendList) {
-        if (err) {
-          return rejectFunc(err);
-        }
-        resolveFunc(friendList);
-      };
-    }
+    photoIDs.map(function (id) {
+      var httpPromise = http
+        .get("https://www.facebook.com/mercury/attachments/photo", ctx.jar, {
+          photo_id: id
+        })
+        .then(utils.parseAndCheckLogin(ctx, http))
+        .then(function (res) {
+          if (res.error) throw res;
+          return res.jsmods.require[0][3][0]
+        })
+        .catch(function (error) {
+          return cb(error);
+        });
+      uploads.push(httpPromise);
+    });
 
-    defaultFuncs
-      .get("https://www.facebook.com/mercury/attachments/photo", ctx.jar, {
-        photo_id: photoID
+    Promise
+      .all(uploads)
+      .then(function (res) {
+        return cb(null, res.reduce(function (form, v, i) {
+          form[photoIDs[i]] = v;
+          return form;
+        }, {}));
       })
-      .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
-      .then(resData => {
-        if (resData.error) {
-          throw resData;
-        }
 
-        var photoUrl = resData.jsmods.require[0][3][0];
+    return rtPromise;
+  }
+  
+  return function resolvePhotoUrl(photoIDs, callback) {
+    var cb;
+    var rtPromise = new Promise(function (resolve, reject) {
+      cb = (error, photoUrl) => photoUrl ? resolve(photoUrl) : reject(error);
+    });
 
-        return callback(null, photoUrl);
+    if (Array.isArray(photoIDs) == false) photoIDs = [photoIDs];
+    if (typeof callback == 'function') cb = callback;
+
+    getPhotoUrls(photoIDs)
+      .then(function (photoUrl) {
+        if (Object.keys(photoUrl).length == 1) {
+          cb(null, photoUrl[photoIDs[0]]);
+        } else cb(null, photoUrl);
       })
-      .catch(err => {
-        log.error("resolvePhotoUrl", err);
-        return callback(err);
-      });
+      .catch(function (error) {
+        log.error('resolvePhotoUrl', error);
+        return cb(error);
+      }); 
 
-    return returnPromise;
-  };
-};
+    return rtPromise;
+  }
+}
