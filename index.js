@@ -73,13 +73,13 @@ function setOptions(globalOptions, options) {
 }
 
 function buildAPI(globalOptions, html, token, jar) {
-  var maybeCookie = jar.getCookies('https://www.facebook.com').reduce(function (Obj, val) {
+  var { c_user, i_user } = jar.getCookies('https://www.facebook.com').reduce(function (Obj, val) {
     var [name, value] = val.cookieString().split('=');
     Obj[name] = value;
     return Obj;
   }, {});
 
-  if (!maybeCookie.i_user && !maybeCookie.c_user) {
+  if (!i_user && !c_user) {
     throw { error: "Error retrieving userID. This can be caused by a lot of things, including getting blocked by Facebook for logging in from an unknown location. Try logging in with a browser to verify." };
   }
 
@@ -87,7 +87,7 @@ function buildAPI(globalOptions, html, token, jar) {
     log.warn("login", "Checkpoint detected. Please log in with a browser to verify.");
   }
 
-  var userID = maybeCookie.i_user || maybeCookie.c_user;
+  var userID = i_user || c_user;
   log.info("login", `Logged in as ${userID}`);
 
   var clientID = (Math.random() * 2147483648 | 0).toString(16);
