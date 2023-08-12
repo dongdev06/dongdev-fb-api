@@ -238,8 +238,8 @@ function parseDelta(http, api, ctx, v) {
             callbackToReturn.delta = delta;
             if (ctx.globalOptions.autoMarkDelivery) 
               markDelivery(ctx, api, callbackToReturn.threadID, callbackToReturn.messageID);
-            !ctx.globalOptions.selfListen && callbackToReturn.senderID === ctx.userID ? null : globalCallback(null, callbackToReturn);
           }
+          !ctx.globalOptions.selfListen && callbackToReturn.senderID === ctx.userID ? null : globalCallback(null, callbackToReturn);
         }
       });
       return;
