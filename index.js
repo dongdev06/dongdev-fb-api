@@ -73,10 +73,10 @@ function setOptions(globalOptions, options) {
 }
 
 function buildAPI(globalOptions, html, token, jar) {
-  var { c_user, i_user } = jar.getCookies('https://www.facebook.com').reduce(function (Obj, val) {
+  var { c_user, i_user } = jar.getCookies('https://www.facebook.com').reduce(function (form, val) {
     var [name, value] = val.cookieString().split('=');
-    Obj[name] = value;
-    return Obj;
+    form[name] = value;
+    return form;
   }, {});
 
   if (!i_user && !c_user) {
@@ -97,7 +97,6 @@ function buildAPI(globalOptions, html, token, jar) {
   let mqttEndpoint = null;
   let region = null;
   let irisSeqID = null;
-  var noMqttData = null;
 
   if (token == 'NONE') log.warn('login', 'Cant get access_token');
   if (oldFBMQTTMatch) {
@@ -122,7 +121,7 @@ function buildAPI(globalOptions, html, token, jar) {
         log.info("login", `[Unused] Polling endpoint: ${legacyFBMQTTMatch[6].split('",')[0]}`);
       } else {
         log.warn("login", "Cannot get MQTT region & sequence ID.");
-        noMqttData = html;
+        api.htmlData = html;
       }
     }
   }
@@ -150,10 +149,6 @@ function buildAPI(globalOptions, html, token, jar) {
       return utils.getAppState(jar);
     }
   };
-
-  if (noMqttData) {
-    api.htmlData = noMqttData;
-  }
 
   var defaultFuncs = utils.makeDefaults(html, userID, ctx);
   
