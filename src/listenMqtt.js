@@ -59,7 +59,7 @@ function parseDelta(http, api, ctx, v) {
         if (fmtMsg && ctx.globalOptions.autoMarkDelivery)
           markDelivery(ctx, api, fmtMsg.threadID, fmtMsg.messageID);
         
-        return !ctx.globalOptions.selfListen && fmtMsg.senderID == ctx.userID ? null : globalCallback(null, fmtMsg);
+        !ctx.globalOptions.selfListen && fmtMsg.senderID == ctx.userID ? null : globalCallback(null, fmtMsg);
       } else {
         if (v.delta.attachments && v.delta.attachments[i].mercury.attach_type == "photo") {
           api.resolvePhotoUrl(v.delta.attachments[i].fbid)
