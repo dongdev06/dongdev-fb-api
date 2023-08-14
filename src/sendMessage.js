@@ -21,7 +21,7 @@ module.exports = function (http, api, ctx) {
       var httpPro = http
         .postFormData('https://upload.facebook.com/ajax/mercury/upload.php', ctx.jar, {
           upload_1024: stream,
-          voice_clip: true
+          voice_clip: 'true'
         })
         .then(utils.parseAndCheckLogin(ctx, http))
         .then(function (res) {
@@ -186,13 +186,11 @@ module.exports = function (http, api, ctx) {
           throw res;
 
         var event = res.payload.actions.reduce(function (p, v) {
-          return (
-            {
-              threadID: v.thread_fbid,
-              messageID: v.message_id,
-              timestamp: v.timestamp
-            } || p
-          );
+          return {
+            threadID: v.thread_fbid || v.other_user_fbid,
+            messageID: v.message_id,
+            timestamp: v.timestamp
+          }
         }, null);
         return cb(null, event);
       })
@@ -200,8 +198,7 @@ module.exports = function (http, api, ctx) {
         if (error.error === 1545012)
           log.warn("sendMessage", "Got error 1545012. This might mean that you're not part of the conversation " + threadID);
         else log.error("sendMessage", error);
-        if (utils.getType(error) == "Object" && error.error === "Not logged in.") 
-          ctx.loggedIn = false;
+        if (utils.getType(error) == "Object" && error.error === "Not logged in.") ctx.loggedIn = false;
         return cb(error);
       });
 
@@ -230,9 +227,9 @@ module.exports = function (http, api, ctx) {
     var typeMsg = utils.getType(msg);
     var typeTID = utils.getType(threadID);
 
-    if (typeMsg == 'String') msg = { body: msg }
-    else if (typeMsg != 'Object') {
-      var error = "Message should be of type string or object and not " + typeMsg;
+    if (typeMsg == 'String' || typeMsg == 'Array') msg = { body: msg }
+    else if (typeMsg != 'Object' || Object.keys(msg).length < 1) {
+      var error = "Message should be of type string or object or array and not " + typeMsg;
       log.error('sendMessage', error);
       return cb(error);
     }
@@ -263,7 +260,7 @@ module.exports = function (http, api, ctx) {
       is_spoof_warning: false,
       source: "source:chat:web",
       "source_tags[0]": "source:chat",
-      body: msg.body ? String(msg.body) : "",
+      body: msg.body ? typeof msg.body == 'object' ? JSON.stringify(msg.body, null, 2) : String(msg.body) : "",
       html_body: false,
       ui_push_phase: "V3",
       status: "0",
@@ -289,9 +286,8 @@ module.exports = function (http, api, ctx) {
     handleAttachment(msg)
       .then(_ => handleUrl(msg))
       .then(_ => {
-        if (Array.isArray(threadID)) 
-          return sendContent(threadID, false, messageAndOTID);
-        return typeof isGroup == 'boolean' ? sendContent(threadID, !isGroup, messageAndOTID) : sendContent(threadID, threadID.toString().length < 16, messageAndOTID);
+        isGroup = Array.isArray(threadID) ? false : typeof isGroup == 'boolean' ? !isGroup : threadID.toString().length < 16;
+        return sendContent(threadID, isGroup, messageAndOTID);
       })
       .then(event => cb(null, event))
       .catch(function (error) {
