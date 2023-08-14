@@ -62,9 +62,6 @@ function setOptions(globalOptions, options) {
       case 'autoReconnect':
         globalOptions.autoReconnect = Boolean(options.autoReconnect);
         break;
-      case 'emitReady':
-        globalOptions.emitReady = Boolean(options.emitReady);
-        break;
       default:
         log.warn("setOptions", "Unrecognized option given to setOptions: " + key);
         break;
@@ -91,7 +88,12 @@ function buildAPI(globalOptions, html, token, jar) {
   log.info("login", `Logged in as ${userID}`);
 
   var clientID = (Math.random() * 2147483648 | 0).toString(16);
-
+  var api = {
+    setOptions: setOptions.bind(null, globalOptions),
+    getAppState: function getAppState() {
+      return utils.getAppState(jar);
+    }
+  }
 
   let oldFBMQTTMatch = html.match(/irisSeqID:"(.+?)",appID:219994525426954,endpoint:"(.+?)"/);
   let mqttEndpoint = null;
@@ -143,28 +145,21 @@ function buildAPI(globalOptions, html, token, jar) {
     firstListen: true
   };
 
-  var api = {
-    setOptions: setOptions.bind(null, globalOptions),
-    getAppState: function getAppState() {
-      return utils.getAppState(jar);
-    }
-  };
-
-  var defaultFuncs = utils.makeDefaults(html, userID, ctx);
+  var http = utils.makeDefaults(html, userID, ctx);
   
   // Load all api functions in a loop
   require('node:fs')
     .readdirSync(__dirname + '/src/')
     .filter((v) => v.endsWith('.js'))
     .map(function (v) {
-      api[v.replace('.js', '')] = require('./src/' + v)(defaultFuncs, api, ctx);
+      api[v.replace('.js', '')] = require('./src/' + v)(http, api, ctx);
     });
 
   //Removing original `listen` that uses pull.
   //Map it to listenMqtt instead for backward compatibly.
   api.listen = api.listenMqtt;
 
-  return [ctx, defaultFuncs, api];
+  return [ctx, http, api];
 }
 
 function makeLogin(jar, email, password, loginOptions, callback, prCallback) {
