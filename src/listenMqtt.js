@@ -281,7 +281,7 @@ function parseDelta(http, api, ctx, v) {
         })
       }
       http
-        .post('https://www.facebook.com/api/graphqlbatch/', ctx.ja, form)
+        .post('https://www.facebook.com/api/graphqlbatch/', ctx.jar, form)
         .then(utils.parseAndCheckLogin(ctx, http))
         .then(function (res) {
           if (res[res.length - 1].error_results > 0) throw res[0].o0.errors;
