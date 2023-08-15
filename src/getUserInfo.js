@@ -36,12 +36,12 @@ function formatDataGraph(Obj, { userID, res }) {
       id: userID,
       name: res.name,
       shortName: res.short_name || null,
-      verified: res.verified != false ? true : false,
+      verified: res.is_verified,
       email: res.email || null,
       website: res.website || null,
-      follower: !!res.subscribers == true ? res.subscribers.summary.total_count : null,
+      follower: !!res.subscribers ? res.subscribers.summary.total_count : null,
       lover: res.significant_other || null,
-      cover: !!res.cover == true ? res.cover.source : null,
+      cover: !!res.cover ? res.cover.source : null,
       first_name: res.first_name || null,
       middle_name: res.middle_name || null,
       last_name: res.last_name || null,
@@ -49,25 +49,25 @@ function formatDataGraph(Obj, { userID, res }) {
       birthday: res.birthday || null,
       languages: res.languages || [],
       gender: res.gender || null,
-      hometown: !!res.hometown == true ? res.hometown.name : null,
+      hometown: !!res.hometown ? res.hometown.name : null,
       profileUrl: res.link || null,
-      location: !!res.location == true ? res.location.name : null,
+      location: !!res.location ? res.location.name : null,
       username: res.username || null,
-      avatar: !!res.picture == true ? res.picture.data.url : null,
-      relationship_status: !!res.relationship_status == true ? res.relationship_status : null,
-      subscribers: !!res.subscribers == true ? res.subscribers.data : null,
-      favorite_athletes: !!res.favorite_athletes == false ? [] : res.favorite_athletes.map(function (v) {
+      avatar: !!res.picture ? res.picture.data.url : null,
+      relationship_status: !!res.relationship_status ? res.relationship_status : null,
+      subscribers: !!res.subscribers ? res.subscribers.data : null,
+      favorite_athletes: !!res.favorite_athletes ? res.favorite_athletes.map(function (v) {
         return {
           name: v.name
         }
-      }),
-      education: !!res.education == true ? res.education.map(function(v) {
+      }) : [],
+      education: !!res.education ? res.education.map(function(v) {
         return {
           type: v.type,
           school: v.school.name
         }
       }) : [],
-      work: !!res.work == true ? res.work : []
+      work: !!res.work ? res.work : []
     }
   }
   return Obj;
@@ -84,7 +84,7 @@ module.exports = function (http, api, ctx) {
     // Getting User Data From GraphAPI In The Loop
     userIDs.map(function (userID) {
       var mainPromise = http
-        .get(`https://graph.facebook.com/v1.0/${userID}?fields=name,verified,cover,first_name,email,about,birthday,gender,website,hometown,link,location,quotes,relationship_status,significant_other,username,subscribers.limite(0),short_name,last_name,middle_name,education,picture,work,languages,favorite_athletes&access_token=` + ctx.access_token, ctx.jar)
+        .get(`https://graph.facebook.com/v1.0/${userID}?fields=name,is_verified,cover,first_name,email,about,birthday,gender,website,hometown,link,location,quotes,relationship_status,significant_other,username,subscribers.limite(0),short_name,last_name,middle_name,education,picture,work,languages,favorite_athletes&access_token=` + ctx.access_token, ctx.jar)
         .then(utils.parseAndCheckLogin(ctx, http))
         .then(function (res) {
           return { userID, res }
