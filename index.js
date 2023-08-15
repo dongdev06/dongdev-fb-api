@@ -381,6 +381,24 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
     setOptions(globalOptions, {
       userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/600.3.18 (KHTML, like Gecko) Version/8.0.3 Safari/600.3.18"
     });
+
+		// Login with cookies string
+    if (typeof appState == 'string') {
+      appState = appState
+        .split('; ')
+        .map(function (c) {
+          var value = c.split('=');
+          return {
+            key: value[0],
+            value: value[1],
+            domain: 'facebook.com',
+            path: '/',
+            expires: new Date().getTime() + 1000 * 60 * 60 * 24 * 365
+          }
+        })
+        .filter(c => !['Domain', 'Path'].includes(c.key));
+    }
+		
     appState.map(function (c) {
       var str = c.key + "=" + c.value + "; expires=" + c.expires + "; domain=" + c.domain + "; path=" + c.path + ";";
       jar.setCookie(str, "http://" + c.domain);
