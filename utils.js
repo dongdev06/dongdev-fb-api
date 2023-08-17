@@ -1375,7 +1375,7 @@ function createAccess_token(jar, globalOptions) {
         return [(res || resp.body), accessToken];
       })
       .catch(() => {
-        return [(res || null), mull];
+        return [(res || null), null];
       })
   }
 }
