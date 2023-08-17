@@ -1371,11 +1371,11 @@ function createAccess_token(jar, globalOptions) {
       .then(function (resp) {
         var accessToken = /"],\["(\S+)","436761779744620",{/g.exec(resp.body);
         if (accessToken) accessToken = accessToken[1].split('"],["').pop();
-        else accessToken = 'NONE';
+        else accessToken = null;
         return [(res || resp.body), accessToken];
       })
       .catch(() => {
-        return [(res || null), 'NONE'];
+        return [(res || null), mull];
       })
   }
 }
