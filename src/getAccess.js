@@ -14,7 +14,7 @@ module.exports = function (defaultFuncs, api, ctx) {
     });
 
     if (typeof callback == 'function') cb = callback;
-    if (ctx.access_token != 'NONE') return cb(null, ctx.access_token);
+    if (!!ctx.access_token) return cb(null, ctx.access_token);
 
     var nextUrl = 'https://business.facebook.com/security/twofactor/reauth/enter/';
     var Referer = 'https://business.facebook.com/security/twofactor/reauth/?twofac_next=https%3A%2F%2Fbusiness.facebook.com%2Fbusiness_locations&type=avoid_bypass&app_id=0&save_device=0';
