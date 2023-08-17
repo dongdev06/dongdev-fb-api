@@ -61,7 +61,7 @@ module.exports = function (http, api, ctx) {
     if (typeof callback == 'function') cb = callback;
     if (Array.isArray(userIDs) == false) userIDs = [userIDs];
     var [height, width] = size;
-    if (ctx.access_token == 'NONE') {
+    if (!ctx.access_token) {
       log.error('getAvatarUser', 'Cant get access_token');
       return cb('Cant get access_token')
     };
