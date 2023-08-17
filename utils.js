@@ -63,13 +63,7 @@ function get(url, jar, qs, options, ctx, customHeader) {
 		gzip: true
 	};
 
-  var callback;
-  var returnPromise = new Promise(function (resolve, reject) {
-    callback = (error, data) => error != null ? reject(error) : resolve(data);
-  });
-  request(op, callback);
-
-	return returnPromise;
+  return new Promise((resolve, reject) => request(op, (error, data) => error != null ? reject(error) : resolve(data)));
 }
 
 function post(url, jar, form, options, ctx, customHeader) {
@@ -83,13 +77,7 @@ function post(url, jar, form, options, ctx, customHeader) {
 		gzip: true
 	}
 
-	var callback;
-  var returnPromise = new Promise(function (resolve, reject) {
-    callback = (error, data) => error != null ? reject(error) : resolve(data);
-  });
-  request(op, callback);
-
-	return returnPromise;
+	return new Promise((resolve, reject) => request(op, (error, data) => error != null ? reject(error) : resolve(data)));
 }
 
 function postFormData(url, jar, form, qs, options, ctx) {
@@ -106,13 +94,7 @@ function postFormData(url, jar, form, qs, options, ctx) {
 		gzip: true
 	};
 
-	var callback;
-  var returnPromise = new Promise(function (resolve, reject) {
-    callback = (error, data) => error != null ? reject(error) : resolve(data);
-  });
-  request(op, callback);
-
-	return returnPromise;
+	return new Promise((resolve, reject) => request(op, (error, data) => error != null ? reject(error) : resolve(data)));
 }
 
 function padZeros(val, len) {
