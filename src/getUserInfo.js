@@ -122,9 +122,10 @@ module.exports = function (http, api, ctx) {
     if (Array.isArray(userIDs) == false) userIDs = [userIDs];
 
     if (useGraph) {
-      if (ctx.access_token == 'NONE') {
-        log.error('getUserInfo', 'Cant get access_token, please let the "useGraph" feature is false');
-        return cb('Cant get access_token, please let the "useGraph" feature is false');
+      if (!ctx.access_token) {
+				var err = 'Cant get access_token, please let the "useGraph" feature is false';
+        log.error('getUserInfo', err);
+        return cb(err);
       }
       handleGetData(userIDs)
         .then(function (res) {
