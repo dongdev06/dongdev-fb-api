@@ -10,7 +10,6 @@ const url = require("url");
 function setProxy(proxy) {
   if (typeof proxy == 'string')
     request = require("request").defaults({ jar: true, proxy });
-  else request = request;
   return;
 }
 
@@ -1418,5 +1417,5 @@ module.exports = {
 	getAppState,
 	getAdminTextMessageType,
 	setProxy,
-  createAccess_token
+ getAccessFromBusiness
 }
