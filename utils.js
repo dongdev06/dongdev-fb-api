@@ -1365,18 +1365,17 @@ function getAppState(jar) {
 		.concat(jar.getCookies("https://www.messenger.com"));
 }
 
-function createAccess_token(jar, globalOptions) {
+function getAccessFromBusiness(jar, Options) {
   return function (res) {
-    return get('https://business.facebook.com/business_locations', jar, null, globalOptions)
-      .then(function (resp) {
-        var accessToken = /"],\["(\S+)","436761779744620",{/g.exec(resp.body);
-        if (accessToken) accessToken = accessToken[1].split('"],["').pop();
-        else accessToken = null;
-        return [(res || resp.body), accessToken];
+    var html = res ? res.body : null;
+    return get('https://business.facebook.com/content_management', jar, null, Options, null, { noRef: true })
+      .then(function (res) {
+        var token = /"accessToken":"(\S+)","clientID":/g.exec(res.body)[1];
+        return [html, token];
       })
-      .catch(() => {
-        return [(res || null), null];
-      })
+      .catch(function () {
+        return [html, null];
+      });
   }
 }
 
