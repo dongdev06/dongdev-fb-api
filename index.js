@@ -421,9 +421,7 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
       .then(makeLogin(jar, email, password, globalOptions, callback, prCallback));
   }
 
-  var ctx = null;
-  var _defaultFuncs = null;
-  var api = null;
+  var ctx, http, api;
 
   mainPromise = mainPromise
     .then(function (res) {
@@ -437,33 +435,15 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
       }
       return res;
     })
-    // get access_token (maybe?)
-    .then(utils.createAccess_token(jar, globalOptions))
+    .then(utils.getAccessFromBusiness(jar, globalOptions))
     .then(function (res) {
-      var [html, token] = res;
-      var stuff = buildAPI(globalOptions, html.body, token, jar);
+      var stuff = buildAPI(globalOptions, res[0], res[1], jar);
       ctx = stuff[0];
-      _defaultFuncs = stuff[1];
+      http = stuff[1];
       api = stuff[2];
-      return res;
+      return;
     });
-
-  // given a pageID we log in as a page  
-  if (globalOptions.pageID) {
-    mainPromise = mainPromise
-      .then(function () {
-        return utils
-          .get('https://www.facebook.com/' + ctx.globalOptions.pageID + '/messages/?section=messages&subsection=inbox', ctx.jar, null, globalOptions);
-      })
-      .then(function (resData) {
-        var url = utils.getFrom(resData.body, 'window.location.replace("https:\\/\\/www.facebook.com\\', '");').split('\\').join('');
-        url = url.substring(0, url.length - 1);
-
-        return utils
-          .get('https://www.facebook.com' + url, ctx.jar, null, globalOptions);
-      });
-  }
-
+	
   // At the end we call the callback or catch an exception
   mainPromise
     .then(function () {
