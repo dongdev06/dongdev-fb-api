@@ -29,11 +29,13 @@ function formatData(data) {
   return retObj;
 }
 
-function formatDataGraph(Obj, { userID, res }) {
-  if (res.error) Obj[userID] = {};
-  else {
-    Obj[userID] = {
-      id: userID,
+function formatDataGraph(userData, userIDs) {
+  var Obj = {};
+
+  userIDs.map(function (c, i) {
+    var res = userData[i];
+    return !res.data ? Obj[c] = {
+      id: c,
       name: res.name,
       shortName: res.short_name || null,
       verified: res.is_verified,
@@ -68,8 +70,9 @@ function formatDataGraph(Obj, { userID, res }) {
         }
       }) : [],
       work: !!res.work ? res.work : []
-    }
-  }
+    } : null;
+  });
+  
   return Obj;
 }
 
@@ -83,23 +86,20 @@ module.exports = function (http, api, ctx) {
 
     // Getting User Data From GraphAPI In The Loop
     userIDs.map(function (userID) {
-      var mainPromise = http
-        .get(`https://graph.facebook.com/v1.0/${userID}?fields=name,is_verified,cover,first_name,email,about,birthday,gender,website,hometown,link,location,quotes,relationship_status,significant_other,username,subscribers.limite(0),short_name,last_name,middle_name,education,picture,work,languages,favorite_athletes&access_token=` + ctx.access_token, ctx.jar)
-        .then(utils.parseAndCheckLogin(ctx, http))
+      var mainPromise = utils
+        .get(`https://graph.facebook.com/v1.0/${userID}?fields=name,is_verified,cover,first_name,email,about,birthday,gender,website,hometown,link,location,quotes,relationship_status,significant_other,username,subscribers.limite(0),short_name,last_name,middle_name,education,picture,work,languages,favorite_athletes&access_token=` + ctx.access_token, ctx.jar, null, ctx.globalOptions)
         .then(function (res) {
-          return { userID, res }
+          return JSON.parse(res.body);
         })
-        .catch(function (err) {
-          return { userID, res: { error: 404 } }
-        });
+        .catch(cb);
       return uploads.push(mainPromise);
     });
 
     // resolve all promise
     Promise
       .all(uploads)
-      .then(function (res) {
-        return cb(null, res);
+      .then(function (userData) {
+        return cb(null, formatDataGraph(userData, userIDs));
       })
       .catch(function (err) {
         return cb(err);
@@ -123,13 +123,13 @@ module.exports = function (http, api, ctx) {
 
     if (useGraph) {
       if (!ctx.access_token) {
-				var err = 'Cant get access_token, please let the "useGraph" feature is false';
+        var err = 'Cant get access_token, please let the "useGraph" feature is false';
         log.error('getUserInfo', err);
         return cb(err);
       }
       handleGetData(userIDs)
         .then(function (res) {
-          return cb(null, res.reduce(formatDataGraph, {}));
+          return cb(null, res);
         })
         .catch(function (err) {
           log.error('getUserInfo', err);
