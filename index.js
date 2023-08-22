@@ -100,7 +100,7 @@ function buildAPI(globalOptions, html, token, jar) {
   let region = null;
   let irisSeqID = null;
 
-  if (token == 'NONE') log.warn('login', 'Cant get access_token');
+  if (!token) log.warn('login', 'Cant get access_token from business.facebook.com');
   if (oldFBMQTTMatch) {
     irisSeqID = oldFBMQTTMatch[1];
     mqttEndpoint = oldFBMQTTMatch[2];
