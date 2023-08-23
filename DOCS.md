@@ -14,6 +14,7 @@
 * [`api.changeThreadEmoji(emoji, threadID, [callback])`](#apichangethreademojiemoji-threadid-callback) ⇒ <code>Promise</code>
 * [`api.createNewGroup(participantIDs, groupTitle, [callback])`](#apicreatenewgroupparticipantids-grouptitle-callback) ⇒ <code>Promise</code>
 * [`api.createPoll(title, threadID, options, [callback]) (*temporary deprecated because Facebook is updating this feature*)`](#apicreatepolltitle-threadid-options-callback-temporary-deprecated-because-facebook-is-updating-this-feature) ⇒ <code>Promise</code>
+* [`api.createPost(message, [callback])`](#apicreatepost-callback) ⇒ <code>Promise</code>
 * [`api.deleteMessage(messageOrMessages, [callback])`](#apideletemessagemessageormessages-callback) ⇒ <code>Promise</code>
 * [`api.deleteThread(threadOrThreads, [callback])`](#apideletethreadthreadorthreads-callback) ⇒ <code>Promise</code>
 * [`api.forwardAttachment(attachmentID, userOrUsers, [callback])`](#apiforwardattachmentattachmentid-userorusers-callback) ⇒ <code>Promise</code>
@@ -1905,6 +1906,27 @@ __Arguments__
 * `callback(err)`: A callback called when the query is done (with an error or with null).
 
 ---------------------------------------
+
+<a name="createPost"></a>
+### api.createPost(message, callback)
+
+| input | Description |
+| ------------- | ------------------------------------------------------------------ |
+| body | Message |
+| baseState | Post status 1 (everyone), 2 (friends), 3 (self) |
+| allowUserID | id of people who can see the post (baseState 3 only) |
+| groupID | group id to post or leave as null |
+| attachment | Pictures included as a stream |
+| mentions | { id: userID , tag: string } |
+
+```js
+var fs = require('fs');
+api.createPost({
+  body: 'Hi',
+  attachment: fs.createReadStream('./image.png')
+}, console.log);
+
+```
 
 ---------------------------------------
 
