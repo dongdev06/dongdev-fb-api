@@ -485,12 +485,10 @@ function login(loginData, options, callback) {
   };
   setOptions(globalOptions, options);
 
-  if (parseInt(process.versions.node) < 14) {
-    log.error('login', 'node version must be 14.x or higher, recommended version: 16.7.0');
-    return callback({
-      error: 'nodeDeprecated',
-      lerror: 'node version must be 14.x or higher, recommended version: 16.7.0'
-    });
+  if (!loginData.appState || (!loginData.email || !loginData.password)) {
+    var error = 'Login need appState or email and password';
+    log.error('login', error);
+    return callback(error);
   }
   loginHelper(loginData.appState, loginData.email, loginData.password, globalOptions, callback, prCallback);
   
