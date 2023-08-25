@@ -485,7 +485,7 @@ function login(loginData, options, callback) {
   };
   setOptions(globalOptions, options);
 
-  if (!loginData.appState || (!loginData.email || !loginData.password)) {
+  if (!loginData.appState && (!loginData.email || !loginData.password)) {
     var error = 'Login need appState or email and password';
     log.error('login', error);
     return callback(error);
