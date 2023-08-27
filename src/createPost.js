@@ -70,6 +70,60 @@ module.exports = function (http, api, ctx) {
     return rt;
   }
 
+  function handleUrl(msg, form) {
+    var cb;
+    var rt = new Promise(function (resolve, reject) {
+      cb = error => error ? reject(error) : resolve();
+    });
+
+    if (!msg.url) cb();
+
+    var vari = {
+      feedLocation: "FEED_COMPOSER",
+      focusCommentID: null,
+      goodwillCampaignId: "",
+      goodwillCampaignMediaIds: [],
+      goodwillContentType: null,
+      params: {
+        url: msg.url
+      },
+      privacySelectorRenderLocation: "COMET_COMPOSER",
+      renderLocation: "composer_preview",
+      parentStoryID: null,
+      scale: 1,
+      useDefaultActor: false,
+      shouldIncludeStoryAttachment: false,
+      __relay_internal__pv__IsWorkUserrelayprovider: false,
+      __relay_internal__pv__IsMergQAPollsrelayprovider: false
+    }
+
+    http
+      .post('https://www.facebook.com/api/graphql/', ctx.jar, {
+        fb_api_req_friendly_name: 'ComposerLinkAttachmentPreviewQuery',
+        variables: JSON.stringify(vari),
+        server_timestamps: true,
+        doc_id: '6549975235094234'
+      })
+      .then(utils.parseAndCheckLogin(ctx, http))
+      .then(function (res) {
+        var res = res.data.link_preview;
+        if (!res.story || JSON.parse(res.share_scrape_data).share_type == 400) 
+          throw { error: 'url is not accepted' }
+        
+        form.input.attachments.push({
+          link: {
+            share_scrape_data: res.share_scrape_data
+          }
+        });
+        form.input.tracking.push(res.story.encrypted_tracking);
+
+        return cb();
+      })
+      .catch(cb);
+
+    return rt;
+  }
+
   function handleMention(msg, form) {
     if (!msg.mentions) return;
 
@@ -134,7 +188,6 @@ module.exports = function (http, api, ctx) {
       return cb(error);
     } else if (typeMsg == 'String') msg = { body: msg };
     if (msg.allowUserID && !Array.isArray(msg.allowUserID)) msg.allowUserID = [msg.allowUserID];
-    else if (!msg.allowUserID) msg.allowUserID = [];
 
     var sessionID = utils.getGUID();
     var base = [
@@ -144,9 +197,9 @@ module.exports = function (http, api, ctx) {
     ];
     var form = {
       input: {
-        composer_entry_point: "inline_composer",
-        composer_source_surface: msg.groupID ? "group" : "timeline",
-        composer_type: msg.groupID ? "group" : "timeline",
+        composer_entry_point: !msg.groupID && msg.url ? 'share_modal' : "inline_composer",
+        composer_source_surface: !msg.groupID && msg.url ? 'feed_story' : msg.groupID ? "group" : "timeline",
+        composer_type: !msg.groupID && msg.url ? 'share' : msg.groupID ? "group" : "timeline",
         idempotence_token: sessionID + "_FEED",
         source: "WWW",
         attachments: [],
@@ -154,8 +207,8 @@ module.exports = function (http, api, ctx) {
           to_id: msg.groupID
         } : {
           privacy: {
-            allow: msg.allowUserID,
-            base_state: msg.allowUserID.length > 0 ? base[2] : (base[msg.baseState - 1] || base[0]),
+            allow: msg.allowUserID ? msg.allowUserID : [],
+            base_state: msg.allowUserID && msg.allowUserID.length > 0 ? base[2] : (base[msg.baseState - 1] || base[0]),
             deny: [],
             tag_expansion_state: "UNSPECIFIED"
           }
@@ -174,6 +227,7 @@ module.exports = function (http, api, ctx) {
         navigation_data: {
           attribution_id_v2: msg.groupID ? "CometGroupDiscussionRoot.react,comet.group,tap_search_bar," + Date.now() + ",909538,2361831622," : "ProfileCometTimelineListViewRoot.react,comet.profile.timeline.list,via_cold_start," + Date.now() + ",796829,190055527696468,"
         },
+        is_tracking_encrypted: !!msg.url,
         tracking: [null],
         event_share_metadata: { 
           surface: "newsfeed"
@@ -224,10 +278,12 @@ module.exports = function (http, api, ctx) {
     }
 
     handleUpload(msg, form)
+      .then(_ => handleUrl(msg, form))
       .then(_ => createContent(form))
       .then(function (res) {
         if (res.error || res.errors) throw res;
 
+        utils.getType(res) == 'Array' ? res = res[0] : null;
         return cb(null, res.data.story_create.story.url);
       })
       .catch(function (err) {
