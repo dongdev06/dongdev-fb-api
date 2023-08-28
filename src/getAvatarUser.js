@@ -44,26 +44,24 @@ module.exports = function (http, api, ctx) {
     return rtPromise;
   }
   
-  return function getAvatarUser(userIDs, size, callback) {
+  return function getAvatarUser(userIDs, size = [1500, 1500], callback) {
     var cb;
     var rtPromise = new Promise(function (resolve, reject) {
-      cb = (err, resData) => resData ? resolve(resData) : reject(err);
+      cb = (err, res) => res ? resolve(res) : reject(err);
     });
+
+    (typeof size == 'string' || typeof size == 'number') ? size = [size, size] : Array.isArray(size) && size.length == 1 ? size = [size[0], size[0]] : null;
 
     if (typeof size == 'function') {
       callback = size;
       size = [1500, 1500];
     }
-    if (Array.isArray(size) == false && typeof Number(size) == 'number') size = [size, size];
-    else if (Array.isArray(size) && size.length == 1 && typeof Number(size[0]) == 'number') size = [size[0], size[0]];
-    else if (Array.isArray(size) && size.length == 2 && typeof Number(size[0]) == 'number' && typeof Number(size[1]) == 'number') size = size;
-    else size = [1500, 1500];
     if (typeof callback == 'function') cb = callback;
-    if (Array.isArray(userIDs) == false) userIDs = [userIDs];
+    if (!Array.isArray(userIDs)) userIDs = [userIDs];
     var [height, width] = size;
     if (!ctx.access_token) {
       log.error('getAvatarUser', 'Cant get access_token');
-      return cb('Cant get access_token')
+      return cb('Cant get access_token');
     };
     
     handleAvatar(userIDs, height, width)
