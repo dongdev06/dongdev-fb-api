@@ -49,6 +49,7 @@ function formatDataGraph(userData, userIDs) {
       last_name: res.last_name || null,
       about: res.about || null,
       birthday: res.birthday || null,
+      locale: res.locale,
       languages: res.languages || [],
       gender: res.gender || null,
       hometown: !!res.hometown ? res.hometown.name : null,
@@ -87,7 +88,7 @@ module.exports = function (http, api, ctx) {
     // Getting User Data From GraphAPI In The Loop
     userIDs.map(function (c) {
       var mainPromise = utils
-        .get(`https://graph.facebook.com/v1.0/${c}?fields=name,is_verified,cover,first_name,email,about,birthday,gender,website,hometown,link,location,quotes,relationship_status,significant_other,username,subscribers.limite(0),short_name,last_name,middle_name,education,picture,work,languages,favorite_athletes&access_token=` + ctx.access_token, ctx.jar, null, ctx.globalOptions)
+        .get(`https://graph.facebook.com/v1.0/${c}?fields=name,is_verified,cover,first_name,email,about,birthday,gender,website,hometown,link,location,quotes,relationship_status,significant_other,username,subscribers.limite(0),short_name,last_name,middle_name,education,picture,work,languages,favorite_athletes,locale&access_token=` + ctx.access_token, ctx.jar, null, ctx.globalOptions)
         .then(function (res) {
           return res.body.indexOf('<') < 0 ? JSON.parse(res.body) : { data: 404 };
         })
