@@ -22,6 +22,7 @@ function formatData(data) {
         isBirthday: !!innerObj.is_birthday,
 				searchTokens: innerObj.searchTokens,
 				alternateName: innerObj.alternateName,
+        isBlocked: innerObj.is_blocked
       };
     }
   }
@@ -146,7 +147,7 @@ module.exports = function (http, api, ctx) {
         .then(utils.parseAndCheckLogin(ctx, http))
         .then(function(res) {
           if (res.error || res.errors) throw res;
-          return cb(null, formatData(res.payload.profile));
+          return cb(null, formatData(res.payload.profiles));
         })
         .catch(function(err) {
           log.error("getUserInfo", err);
