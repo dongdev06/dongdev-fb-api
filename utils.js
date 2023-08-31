@@ -1035,21 +1035,6 @@ function makeDefaults(html, userID, ctx) {
 	let reqCounter = 1;
 	const fb_dtsg = getFrom(html, 'name="fb_dtsg" value="', '"');
 
-	// @Hack Ok we've done hacky things, this is definitely on top 5.
-	// We totally assume the object is flat and try parsing until a }.
-	// If it works though it's cool because we get a bunch of extra data things.
-	//
-	// Update: we don't need this. Leaving it in in case we ever do.
-	//       Ben - July 15th 2017
-
-	// var siteData = getFrom(html, "[\"SiteData\",[],", "},");
-	// try {
-	//   siteData = JSON.parse(siteData + "}");
-	// } catch(e) {
-	//   log.warn("makeDefaults", "Couldn't parse SiteData. Won't have access to some variables.");
-	//   siteData = {};
-	// }
-
 	let ttstamp = "2";
 	for (let i = 0; i < fb_dtsg.length; i++) {
 		ttstamp += fb_dtsg.charCodeAt(i);
@@ -1057,75 +1042,32 @@ function makeDefaults(html, userID, ctx) {
 	const revision = getFrom(html, 'revision":', ",");
 
 	function mergeWithDefaults(obj) {
-		// @TODO This is missing a key called __dyn.
-		// After some investigation it seems like __dyn is some sort of set that FB
-		// calls BitMap. It seems like certain responses have a "define" key in the
-		// res.jsmods arrays. I think the code iterates over those and calls `set`
-		// on the bitmap for each of those keys. Then it calls
-		// bitmap.toCompressedString() which returns what __dyn is.
-		//
-		// So far the API has been working without this.
-		//
-		//              Ben - July 15th 2017
 		const newObj = {
       av: userID,
 			__user: userID,
 			__req: (reqCounter++).toString(36),
 			__rev: revision,
 			__a: 1,
-			//__af: siteData.features,
-			fb_dtsg: ctx.fb_dtsg ? ctx.fb_dtsg : fb_dtsg,
-			jazoest: ctx.ttstamp ? ctx.ttstamp : ttstamp
-			//__spin_r: siteData.__spin_r,
-			//__spin_b: siteData.__spin_b,
-			//__spin_t: siteData.__spin_t,
-		};
-
-		// @TODO this is probably not needed.
-		//         Ben - July 15th 2017
-		// if (siteData.be_key) {
-		//   newObj[siteData.be_key] = siteData.be_mode;
-		// }
-		// if (siteData.pkg_cohort_key) {
-		//   newObj[siteData.pkg_cohort_key] = siteData.pkg_cohort;
-		// }
+			fb_dtsg: ctx.fb_dtsg || fb_dtsg,
+			jazoest: ctx.ttstamp || ttstamp
+		}
 
 		if (!obj) return newObj;
 
-		for (const prop in obj) {
+		for (var prop in obj) {
 			if (obj.hasOwnProperty(prop)) {
-				if (!newObj[prop]) {
-					newObj[prop] = obj[prop];
-				}
+				if (!newObj[prop]) 
+          newObj[prop] = obj[prop];
 			}
 		}
 
 		return newObj;
 	}
 
-	function postWithDefaults(url, jar, form, ctxx, customHeader = {}) {
-		return post(url, jar, mergeWithDefaults(form), ctx.globalOptions, ctxx || ctx, customHeader);
-	}
-
-	function getWithDefaults(url, jar, qs, ctxx, customHeader = {}) {
-		return get(url, jar, mergeWithDefaults(qs), ctx.globalOptions, ctxx || ctx, customHeader);
-	}
-
-	function postFormDataWithDefault(url, jar, form, qs, ctxx) {
-		return postFormData(
-			url,
-			jar,
-			mergeWithDefaults(form),
-			mergeWithDefaults(qs),
-			ctx.globalOptions,
-			ctxx || ctx
-		);
-	}
-
 	return {
-		get: getWithDefaults,
-		post: postWithDefaults,
-		postFormData: postFormDataWithDefault
+		get: (url, jar, qs, ctxx, customHeader = {}) => get(url, jar, mergeWithDefaults(qs), ctx.globalOptions, ctxx || ctx, customHeader),
+		post: (url, jar, form, ctxx, customHeader = {}) => post(url, jar, mergeWithDefaults(form), ctx.globalOptions, ctxx || ctx, customHeader),
+		postFormData: (url, jar, form, qs, ctxx) => postFormData(url, jar, mergeWithDefaults(form), mergeWithDefaults(qs), ctx.globalOptions, ctxx || ctx)
 	};
 }
 
@@ -1417,5 +1359,5 @@ module.exports = {
 	getAppState,
 	getAdminTextMessageType,
 	setProxy,
- getAccessFromBusiness
+  getAccessFromBusiness
 }
