@@ -21,7 +21,8 @@ function getHeaders(url, options, ctx, customHeader) {
 		Origin: "https://www.facebook.com",
 		"User-Agent": options.userAgent,
 		Connection: "keep-alive",
-		"sec-fetch-site": "same-origin"
+		"Sec-Fetch-Site": "same-origin",
+    'Sec-Fetch-User': '?1'
 	};
 	if (customHeader) {
 		Object.assign(headers, customHeader);
@@ -846,6 +847,7 @@ function getAdminTextMessageType(type) {
 		case "change_thread_theme":
 			return "log:thread-color";
 		case "change_thread_icon":
+    case 'change_thread_quick_reaction':
 			return "log:thread-icon";
 		case "change_thread_nickname":
 			return "log:user-nickname";
@@ -902,7 +904,6 @@ function formatDeltaEvent(m) {
 				}
 			};
 	}
-
 	return {
 		type: "event",
 		threadID: formatID(
@@ -912,8 +913,8 @@ function formatDeltaEvent(m) {
 			).toString()
 		),
 		messageID: m.messageMetadata.messageId.toString(),
-		logMessageType: logMessageType,
-		logMessageData: logMessageData,
+		logMessageType,
+		logMessageData,
 		logMessageBody: m.messageMetadata.adminText,
 		timestamp: m.messageMetadata.timestamp,
 		author: m.messageMetadata.actorFbId,
