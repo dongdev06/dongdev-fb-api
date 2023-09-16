@@ -367,6 +367,7 @@ function parseDelta(http, api, ctx, v) {
         case 'pin_messages_v2':
         case 'change_thread_theme':
         case 'change_thread_icon':
+        case 'change_thread_quick_reaction':
         case 'change_thread_nickname':
         case 'change_thread_admins':
         case 'change_thread_approval_mode':
