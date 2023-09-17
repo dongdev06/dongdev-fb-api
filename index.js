@@ -47,6 +47,9 @@ function setOptions(globalOptions, options) {
       case 'autoMarkRead':
         globalOptions.autoMarkRead = Boolean(options.autoMarkRead);
         break;
+      case 'autoRestartMqtt':
+        globalOptions.autoRestartMqtt = Boolean(options.autoRestartMqtt);
+        break;
       case 'listenTyping':
         globalOptions.listenTyping = Boolean(options.listenTyping);
         break;
@@ -300,8 +303,8 @@ function makeLogin(jar, email, password, loginOptions, callback, prCallback) {
                         }
                       })
                       .catch(function (err) {
-                        login.error('login', err);
-                        return cb(err);
+                        log.error('login', err);
+                        return cb(err);                        
                       });
                   }
 
@@ -323,9 +326,7 @@ function makeLogin(jar, email, password, loginOptions, callback, prCallback) {
                 function submitNot2FA() {
                   var cb;
                   var rtPromise = new Promise(function (resolve) {
-                    cb = function (err, api) {
-                      resolve(callback(err, api));
-                    }
+                    cb = (err, api) => resolve(callback(err, api));
                   });
 
                   utils
@@ -337,7 +338,7 @@ function makeLogin(jar, email, password, loginOptions, callback, prCallback) {
                       return utils
                         .post(Referer, jar, form, loginOptions)
                         .then(utils.saveCookies(jar));
-									})
+                    })
                     .then(function (res) {
                       var headers = res.headers;
                       if (!headers.location && res.body.includes('Review Recent Login')) 
@@ -347,8 +348,9 @@ function makeLogin(jar, email, password, loginOptions, callback, prCallback) {
               // and will then complete the login process
                       return loginHelper(appState, email, password, loginOptions, cb);
                     })
-                    .catch(function (e) {
-                      return cb(e);
+                    .catch(function (err) {
+                      log.error('login', err);
+                      return cb(err);                        
                     });
                   return rtPromise;
                 }
@@ -384,10 +386,11 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
 
 		// Login with cookies string
     if (typeof appState == 'string') {
-      appState = appState
-        .split('; ')
+      appState = decodeURIComponent(appState)
+        .split(';')
+        .filter(item => item != '')
         .map(function (c) {
-          var value = c.split('=');
+          var value = c.trim().split('=');
           return {
             key: value[0],
             value: value[1],
@@ -441,7 +444,6 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
       ctx = stuff[0];
       http = stuff[1];
       api = stuff[2];
-      return;
     });
 	
   // At the end we call the callback or catch an exception
@@ -480,6 +482,7 @@ function login(loginData, options, callback) {
     autoMarkDelivery: true,
     autoMarkRead: true,
     autoReconnect: true,
+    autoRestartMqtt: false,
     logRecordSize: defaultLogRecordSize,
     online: true
   };
