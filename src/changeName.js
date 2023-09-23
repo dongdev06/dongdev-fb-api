@@ -33,7 +33,7 @@ module.exports = function (http, api, ctx) {
       if (format == 'complete') full_name = `${data.last_name} ${data.middle_name ? data.middle_name + ' ' : ''}${data.first_name}`;
       else if (format == 'standard') full_name = `${data.last_name} ${data.first_name}`;
       else if (format == 'reversed') full_name = `${data.first_name} ${data.middle_name ? data.middle_name + ' ' : ''}${data.last_name}`;
-      else full_name = `${data.last_name} ${data.middle_name ? data.middle_name + ' ' : ''} ${data.first_name}`;
+      else full_name = `${data.last_name} ${data.middle_name ? data.middle_name + ' ' : ''}${data.first_name}`;
       var form = {
         fb_api_caller_class: 'RelayModern',
         fb_api_req_friendly_name: 'useFXIMUpdateNameMutation',
