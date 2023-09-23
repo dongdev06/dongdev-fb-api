@@ -90,8 +90,9 @@ module.exports = function (http, api, ctx) {
           .then(utils.parseAndCheckLogin(ctx, http));
       })
       .then(function (res) {
-        if (res.errors) throw res;
-        return cb(null, res.data.profile_picture_set);
+        if (res.errors) 
+          throw res;
+        return cb(null, (res[0] || res).data.profile_picture_set.profile);
       })
       .catch(function (err) {
         log.error('changeAvatar', err);
