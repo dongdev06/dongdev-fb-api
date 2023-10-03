@@ -1139,10 +1139,9 @@ function parseAndCheckLogin(ctx, http, retryCount) {
 			// TODO: handle multiple cookies?
 			if (res.jsmods && res.jsmods.require && Array.isArray(res.jsmods.require[0]) && res.jsmods.require[0][0] === "Cookie") {
         res.jsmods.require[0][3][0] = res.jsmods.require[0][3][0].replace("_js_", "");
-        const cookie = formatCookie(res.jsmods.require[0][3], "facebook");
-				const cookie2 = formatCookie(res.jsmods.require[0][3], "messenger");
-				ctx.jar.setCookie(cookie, "https://www.facebook.com");
-				ctx.jar.setCookie(cookie2, "https://www.messenger.com");
+        const requireCookie = res.jsmods.require[0][3];
+				ctx.jar.setCookie(formatCookie(requireCookie, "facebook"), "https://www.facebook.com");
+				ctx.jar.setCookie(formatCookie(requireCookie, "messenger"), "https://www.messenger.com");
       }
 
 			// On every request we check if we got a DTSG and we mutate the context so that we use the latest
@@ -1312,7 +1311,7 @@ function getAccessFromBusiness(jar, Options) {
     var html = res ? res.body : null;
     return get('https://business.facebook.com/content_management', jar, null, Options, null, { noRef: true })
       .then(function (res) {
-        var token = /"accessToken":"(\S+)","clientID":/g.exec(res.body)[1];
+        var token = /"accessToken":"([^.]+)","clientID":/g.exec(res.body)[1];
         return [html, token];
       })
       .catch(function () {
