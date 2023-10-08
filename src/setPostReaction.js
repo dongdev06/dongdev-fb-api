@@ -77,12 +77,12 @@ module.exports = function(defaultFuncs, api, ctx) {
       variables: JSON.stringify({
         input: {
           actor_id: ctx.userID,
-          feedback_id: (new Buffer("feedback:" + postID)).toString("base64"),
+          feedback_id: Buffer.from("feedback:" + postID).toString("base64"),
           feedback_reaction: type,
           feedback_source: "OBJECT",
           is_tracking_encrypted: true,
           tracking: [],
-          session_id: "f7dd50dd-db6e-4598-8cd9-561d5002b423",
+          session_id: utils.getGUID(),
           client_mutation_id: Math.round(Math.random() * 19).toString()
         },
         useDefaultActor: false,
