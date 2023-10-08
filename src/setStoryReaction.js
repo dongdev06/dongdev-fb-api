@@ -12,20 +12,11 @@ module.exports = function (http, api, ctx) {
 
     if (typeof react == 'function') {
       callback = react;
-      react = 1;
+      react = null;
     }
     if (typeof callback == 'function') cb = callback;
-    if (typeof Number(react) != 'number') react = 1;
+    if (typeof react != 'string') react = '👍';
 
-    var map = {
-      1: '👍',
-      2: '❤️',
-      3: '🤗',
-      4: '😆',
-      5: '😮',
-      6: '😢',
-      7: '😡'
-    }
     var form = {
       fb_api_req_friendly_name: 'useStoriesSendReplyMutation',
       variables: JSON.stringify({
@@ -33,16 +24,16 @@ module.exports = function (http, api, ctx) {
           attribution_id_v2: `StoriesCometSuspenseRoot.react,comet.stories.viewer,unexpected,${Date.now()},538296,,;CometHomeRoot.react,comet.home,via_cold_start,${Date.now()},850302,4748854339,`,
           lightweight_reaction_actions: {
             offsets: [0],
-            reaction: map[react] || map[1]
+            reaction: react
           },
-          message: map[react] || map[1],
+          message: react,
           story_id: storyID,
           story_reply_type: "LIGHT_WEIGHT",
           actor_id: ctx.userID,
-          client_mutation_id: String(parseInt(Math.random() * 16))
+          client_mutation_id: Math.round(Math.random() * 19).toString()
         }
       }),
-      doc_id: '4826141330837571'
+      doc_id: 4826141330837571
     }
 
     http
