@@ -28,7 +28,8 @@ module.exports = function (http, api, ctx) {
           if (res.error) 
             throw res;
 
-          return res.payload;
+          if (res.payload) 
+            return res.payload;
         })
         .catch(cb);
 
@@ -102,12 +103,12 @@ module.exports = function (http, api, ctx) {
         fb_api_req_friendly_name: 'ComposerLinkAttachmentPreviewQuery',
         variables: JSON.stringify(vari),
         server_timestamps: true,
-        doc_id: '6549975235094234'
+        doc_id: 6549975235094234
       })
       .then(utils.parseAndCheckLogin(ctx, http))
       .then(function (res) {
         var res = res.data.link_preview;
-        if (!res.story || JSON.parse(res.share_scrape_data).share_type == 400) 
+        if (JSON.parse(res.share_scrape_data).share_type == 400) 
           throw { error: 'url is not accepted' }
         
         form.input.attachments.push({
@@ -115,7 +116,6 @@ module.exports = function (http, api, ctx) {
             share_scrape_data: res.share_scrape_data
           }
         });
-        form.input.tracking.push(res.story.encrypted_tracking);
 
         return cb();
       })
@@ -215,7 +215,7 @@ module.exports = function (http, api, ctx) {
         },
         message: {
           ranges: [],
-          text: msg.body ? typeof msg.body == 'object' ? JSON.stringify(msg.body) : msg.body : '' 
+          text: msg.body ? typeof msg.body == 'object' ? JSON.stringify(msg.body, null, 2) : msg.body : '' 
         },
         with_tags_ids: [],
         inline_activities: [],
@@ -228,7 +228,7 @@ module.exports = function (http, api, ctx) {
           attribution_id_v2: msg.groupID ? "CometGroupDiscussionRoot.react,comet.group,tap_search_bar," + Date.now() + ",909538,2361831622," : "ProfileCometTimelineListViewRoot.react,comet.profile.timeline.list,via_cold_start," + Date.now() + ",796829,190055527696468,"
         },
         is_tracking_encrypted: !!msg.url,
-        tracking: [null],
+        tracking: [],
         event_share_metadata: { 
           surface: "newsfeed"
         },
