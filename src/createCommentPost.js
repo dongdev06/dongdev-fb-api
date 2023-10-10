@@ -7,7 +7,7 @@ function formatComment(res) {
   return {
     id: res.feedback_comment_edge.node.id,
     url: res.feedback_comment_edge.node.feedback.url,
-    commentCount: res.feedback.display_comments_count
+    commentCount: res.feedback.display_comments_count.count
   }
 }
 
@@ -126,7 +126,7 @@ module.exports = function (http, api, ctx) {
     return rt;
   }
   
-  return function createCommentPost(input, postID, replyCommentID, callback, isGroup) {
+  return function createCommentPost(input, postID, callback, replyCommentID, isGroup) {
     var cb;
     typeof isGroup != 'boolean' ? isGroup = false : null;
     var rt = new Promise(function (resolve, reject) {
@@ -174,7 +174,7 @@ module.exports = function (http, api, ctx) {
           ranges: [],
           text: input.body ? typeof input.body == 'object' ? JSON.stringify(input.body) : input.body : '' 
         }, 
-        reply_comment_parent_fbid: isNaN(replyCommentID) ? replyCommentID : Buffer.from('comment:' + postID + '_' + replyCommentID).toString('base64'),
+        reply_comment_parent_fbid: replyCommentID ? isNaN(replyCommentID) ? replyCommentID : Buffer.from('comment:' + postID + '_' + replyCommentID).toString('base64') : null,
         reply_target_clicked: !!replyCommentID,
         attribution_id_v2: 'CometSinglePostRoot.react,comet.post.single,via_cold_start,' + Date.now() + ',253913,,',
         vod_video_timestamp: null,
@@ -188,7 +188,7 @@ module.exports = function (http, api, ctx) {
       renderLocation: null,
       scale: 1,
       useDefaultActor: false,
-      focusCommentID: isNaN(replyCommentID) ? Buffer.from(replyCommentID, 'base64').toString().split('_')[1] : replyCommentID
+      focusCommentID: null
     }
 
     handleAttachment(form, input)
