@@ -3,66 +3,53 @@
 var utils = require('../utils');
 var log = require('npmlog');
 
-module.exports = function (http, api, ctx) {
-  function uploadAttachment(attachment) {
-    var cb;
-    var uploads = [];
-    var rt = new Promise(function (resolve, reject) {
-      cb = (error, files) => files ? resolve(files) : reject(error);
-    });
-
-    attachment.map(function (stream) {
-      if (!utils.isReadableStream(stream)) 
-        return cb("Attachment should be a readable stream and not " + utils.getType(stream));
-
-      var httpPro = http
-        .postFormData('https://upload.facebook.com/ajax/react_composer/attachments/photo/upload', ctx.jar, {
-          source: 8,
-          profile_id: ctx.userID,
-          waterfallxapp: 'comet',
-          farr: stream,
-          upload_id: 'jsc_c_6'
-        })
-        .then(utils.parseAndCheckLogin(ctx, http))
-        .then(function (res) {
-          if (res.error) 
-            throw res;
-
-          if (res.payload) 
-            return res.payload;
-        })
-        .catch(cb);
-
-      return uploads.push(httpPro);
-    });
-
-    Promise
-      .all(uploads)
-      .then(res => cb(null, res))
-      .catch(cb);
-
-    return rt;
-  }
-  
+module.exports = function (http, api, ctx) {  
   function handleUpload(msg, form) {
     var cb;
     var rt = new Promise(function (resolve, reject) {
-      cb = error => error ? reject(error) : resolve(error);
+      cb = error => error ? reject(error) : resolve();
     });
 
     if (!msg.attachment) cb();
     else {
-      if (!Array.isArray(msg.attachment)) msg.attachment = [msg.attachment];
-      uploadAttachment(msg.attachment)
+      msg.attachment = Array.isArray(msg.attachment) ? msg.attachment : [msg.attachment];
+      let uploads = [];
+      for (let attachment of msg.attachment) {
+        if (!utils.isReadableStream(attachment))
+          cb('Attachment should be a readable stream, not ' + utils.getType(attachment));
+
+        var vari = {
+          source: 8,
+          profile_id: ctx.userID,
+          waterfallxapp: 'comet',
+          farr: attachment,
+          upload_id: 'jsc_c_6'
+        }
+        var main = http
+            .postFormData('https://upload.facebook.com/ajax/react_composer/attachments/photo/upload', ctx.jar, vari)
+            .then(utils.parseAndCheckLogin(ctx, http))
+            .then(function (res) {
+              if (res.error || res.errors) 
+                throw res;
+
+              return res.payload;
+            });
+        
+        uploads.push(main);
+      }
+
+      Promise
+        .all(uploads)
         .then(function (res) {
-          res.map(function (c) {
-            if (!c) return;
-            return form.input.attachments.push({
+          for (let payload of res) {
+          if (!payload) break;
+            form.input.attachments.push({
               photo: {
-                id: c.photoID
+                id: payload.photoID
               }
             });
-          });
+          }
+
           return cb();
         })
         .catch(cb);
@@ -78,48 +65,49 @@ module.exports = function (http, api, ctx) {
     });
 
     if (!msg.url) cb();
-
-    var vari = {
-      feedLocation: "FEED_COMPOSER",
-      focusCommentID: null,
-      goodwillCampaignId: "",
-      goodwillCampaignMediaIds: [],
-      goodwillContentType: null,
-      params: {
-        url: msg.url
-      },
-      privacySelectorRenderLocation: "COMET_COMPOSER",
-      renderLocation: "composer_preview",
-      parentStoryID: null,
-      scale: 1,
-      useDefaultActor: false,
-      shouldIncludeStoryAttachment: false,
-      __relay_internal__pv__IsWorkUserrelayprovider: false,
-      __relay_internal__pv__IsMergQAPollsrelayprovider: false
-    }
-
-    http
-      .post('https://www.facebook.com/api/graphql/', ctx.jar, {
-        fb_api_req_friendly_name: 'ComposerLinkAttachmentPreviewQuery',
-        variables: JSON.stringify(vari),
-        server_timestamps: true,
-        doc_id: 6549975235094234
-      })
-      .then(utils.parseAndCheckLogin(ctx, http))
-      .then(function (res) {
-        var res = (res[0] || res).data.link_preview;
-        if (JSON.parse(res.share_scrape_data).share_type == 400) 
-          throw { error: 'url is not accepted' }
+    else {
+      var vari = {
+        feedLocation: "FEED_COMPOSER",
+        focusCommentID: null,
+        goodwillCampaignId: "",
+        goodwillCampaignMediaIds: [],
+        goodwillContentType: null,
+        params: {
+          url: msg.url
+        },
+        privacySelectorRenderLocation: "COMET_COMPOSER",
+        renderLocation: "composer_preview",
+        parentStoryID: null,
+        scale: 1,
+        useDefaultActor: false,
+        shouldIncludeStoryAttachment: false,
+        __relay_internal__pv__IsWorkUserrelayprovider: false,
+        __relay_internal__pv__IsMergQAPollsrelayprovider: false
+      }
+      
+      http
+        .post('https://www.facebook.com/api/graphql/', ctx.jar, {
+          fb_api_req_friendly_name: 'ComposerLinkAttachmentPreviewQuery',
+          variables: JSON.stringify(vari),
+          server_timestamps: true,
+          doc_id: 6549975235094234
+        })
+        .then(utils.parseAndCheckLogin(ctx, http))
+        .then(function (res) {
+          var res = (res[0] || res).data.link_preview;
+          if (JSON.parse(res.share_scrape_data).share_type == 400) 
+            throw { error: 'url is not accepted' }
         
-        form.input.attachments.push({
-          link: {
-            share_scrape_data: res.share_scrape_data
-          }
-        });
+          form.input.attachments.push({
+            link: {
+              share_scrape_data: res.share_scrape_data
+            }
+          });
 
-        return cb();
-      })
-      .catch(cb);
+          return cb();
+        })
+        .catch(cb);
+    }
 
     return rt;
   }
@@ -127,36 +115,36 @@ module.exports = function (http, api, ctx) {
   function handleMention(msg, form) {
     if (!msg.mentions) return;
 
-    msg.mentions.map(function (mention) {
-      var { id, tag } = mention;
+    msg.mentions = Array.isArray(msg.mentions) ? msg.mentions : [msg.mentions];
+    for (let mention of msg.mentions) {
+      var { id, tag, fromIndex } = mention;
 
       if (typeof tag != 'string')
         throw 'Mention tag must be string';
       if (!id)
         throw 'id must be string';
-      var offset = msg.body.indexOf(tag, mention.fromIndex || 0);
+      var offset = msg.body.indexOf(tag, fromIndex || 0);
       if (offset < 0)
         throw 'Mention for "' + tag + '" not found in message string.';
-
-      return form.input.message.ranges.push({
+      form.input.message.ranges.push({
         entity: { id },
         length: tag.length,
         offset
       });
-    });
+    }
   }
 
   function createContent(vari) {
     var cb;
     var rt = new Promise(function (resolve, reject) {
-      cb = (error, url) => url ? resolve(url) : reject(url);
+      cb = (error, postData) => error ? reject(error) : resolve(postData);
     });
     
     var form = {
       fb_api_req_friendly_name: 'ComposerStoryCreateMutation',
       variables: JSON.stringify(vari),
       server_timestamps: true,
-      doc_id: '6255089511280268'
+      doc_id: 6255089511280268
     }
 
     http
@@ -187,7 +175,7 @@ module.exports = function (http, api, ctx) {
       log.error('createPost', error);
       return cb(error);
     } else if (typeMsg == 'String') msg = { body: msg };
-    if (msg.allowUserID && !Array.isArray(msg.allowUserID)) msg.allowUserID = [msg.allowUserID];
+    msg.allowUserID = msg.allowUserID ? !Array.isArray(msg.allowUserID) ? [msg.allowUserID] : msg.allowUserID : null;
 
     var sessionID = utils.getGUID();
     var base = [
@@ -270,21 +258,14 @@ module.exports = function (http, api, ctx) {
       __relay_internal__pv__StoriesRingrelayprovider: false
     }
 
-    try {
-      handleMention(msg, form);
-    } catch (e) {
-      log.error('createPost', e);
-      return cb(e);
-    }
-
     handleUpload(msg, form)
       .then(_ => handleUrl(msg, form))
+      .then(_ => handleMention(msg, form))
       .then(_ => createContent(form))
       .then(function (res) {
         if (res.error || res.errors) throw res;
 
-        utils.getType(res) == 'Array' ? res = res[0] : null;
-        return cb(null, res.data.story_create.story.url);
+        return cb(null, (res[0] || res).data.story_create.story.url);
       })
       .catch(function (err) {
         log.error('createPost', err);
