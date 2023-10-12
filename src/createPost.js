@@ -107,7 +107,7 @@ module.exports = function (http, api, ctx) {
       })
       .then(utils.parseAndCheckLogin(ctx, http))
       .then(function (res) {
-        var res = res.data.link_preview;
+        var res = (res[0] || res).data.link_preview;
         if (JSON.parse(res.share_scrape_data).share_type == 400) 
           throw { error: 'url is not accepted' }
         
