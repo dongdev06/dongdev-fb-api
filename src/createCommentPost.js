@@ -3,140 +3,144 @@
 var utils = require('../utils');
 var log = require('npmlog');
 
-function formatComment(res) {
-  return {
-    id: res.feedback_comment_edge.node.id,
-    url: res.feedback_comment_edge.node.feedback.url,
-    commentCount: res.feedback.display_comments_count.count
-  }
-}
-
 module.exports = function (http, api, ctx) {
-  function handleUpload(input) {
-    var cb;
-    var rt = new Promise(function (resolve, reject) {
-      cb = (error, info) => error ? reject(error) : resolve(info);
-    });
-
-    !Array.isArray(input.attachment) ? input.attachment = [input.attachment] : null;
-    var form = [];
-    for (let item of input.attachment) {
-      if (!utils.isReadableStream(item)) 
-        throw 'Attachment should be a readable stream or url, and not' + utils.getType(item);
-      var httpPromise = http
-        .postFormData('https://www.facebook.com/ajax/ufi/upload/', ctx.jar, {
-          profile_id: ctx.userID,
-          source: 19,
-          target_id: ctx.userID,
-          file: item
-        })
-        .then(utils.parseAndCheckLogin(ctx, http))
-        .then(function (res) {
-          if (res.error) throw res;
-          return {
-            media: {
-              id: res.payload.fbid
-            }
-          }
-        });
-      form.push(httpPromise);
-    }
-
-    Promise
-      .all(form)
-      .then(info => cb(null, info));
-
-    return rt;
-  }
-  
-  function handleAttachment(form, input) {
+  function handleUpload(input, form) {
     var cb;
     var rt = new Promise(function (resolve, reject) {
       cb = error => error ? reject(error) : resolve();
     });
 
-    if (!input.attachment) cb();
+    if (!input.attchment) cb();
     else {
-      handleUpload(input)
+      input.attachment = !Array.isArray(input.attachment) ? [input.attachment] : input.attachment;
+      var uploads = [];
+      for (let image of input.attachment) {
+        if (!utils.isReadableStream(image))
+          return cb('image should be a readable stream and not ' + utils.getType(image));
+        var httpPromise = http
+          .postFormData('https://www.facebook.com/ajax/ufi/upload/', ctx.jar, {
+            profile_id: ctx.userID,
+            source: 19,
+            target_id: ctx.userID,
+            file: image
+          })
+          .then(utils.parseAndCheckLogin(ctx, http))
+          .then(function (res) {
+            if (res.errors || res.error || !res.payload) 
+              throw res;
+
+            return {
+              media: {
+                id: res.payload.id
+              }
+            }
+          })
+          .catch(cb);
+        uploads.push(httpPromise);
+      }
+
+      Promise
+        .all(uploads)
         .then(function (res) {
-          res.map(item => form.input.attachments.push(item));
+          for (let item of res) 
+            form.input.attachments.push(item);
 
           return cb();
-        });
+        })
+        .catch(cb);
     }
-    
+
     return rt;
   }
 
-  function handleUrl(form, input) {
-    if (input.url && typeof input.url == 'string') {
-      form.input.attachments.push({
+  function handleMention(input, form) {
+    if (!input.mentions) return;
+    input.mentions = !Array.isArray(input.mentions) ? [input.mentions] : input.mentions;
+    for (let mention of input.mentions) {
+      var { tag, id, fromIndex } = mention;
+      if (typeof tag != 'string')
+        throw 'Mention tag must be string';
+      if (!id)
+        throw 'id must be string';
+      var offset = input.body.indexOf(tag, fromIndex || 0);
+      if (offset < 0)
+        throw 'Mention for "' + tag + '" not found in message string.';
+      form.input.message.ranges.push({
+        entity: { id },
+        length: tag.length,
+        offset
+      });
+    }
+  }
+
+  function handleUrl(input, form) {
+    if (!input.url && typeof input.url == 'string') return;
+    form.input.attachments = [
+      {
         link: {
           external: {
             url: input.url
           }
         }
-      });
-    }
-  }
-
-  function handleMention(input, form) {
-    if (input.mentions) {
-      input.mentions instanceof Array ? null : input.mentions = [input.mentions];
-      for (let item of input.mentions) {
-        var { tag, id } = item;
-        if (typeof tag != 'string')
-          throw 'Mention tag must be string';
-        if (!id)
-          throw 'id must be string';
-        var offset = input.body.indexOf(tag, item.fromIndex || 0);
-        if (offset < 0)
-          throw 'Mention for "' + tag + '" not found in message string.';
-
-        form.input.message.ranges.push({
-          entity: { id },
-          length: tag.length,
-          offset
-        });
       }
-    }
+    ];
   }
 
-  function createContent(vari) {
+  function handleSticker(input, form) {
+    if (!input.sticker && !isNaN(input.sticker)) return;
+    form.input.attachments = [
+      {
+        media: {
+          id: input.sticker
+        }
+      }
+    ];
+  }
+
+  function createContent(form) {
     var cb;
     var rt = new Promise(function (resolve, reject) {
-      cb = (error, info) => info ? resolve(info) : reject(error);
+      cb = (error, info) => error ? reject(error) : resolve(info);
     });
 
     http
       .post('https://www.facebook.com/api/graphql/', ctx.jar, {
         fb_api_caller_class: 'RelayModern',
         fb_api_req_friendly_name: 'useCometUFICreateCommentMutation',
-        variables: JSON.stringify(vari),
+        variables: JSON.stringify(form),
         server_timestamps: true,
         doc_id: 6687401108025716
       })
       .then(utils.parseAndCheckLogin(ctx, http))
       .then(function (res) {
-        if (res.errors) throw res;
-        return cb(null, formatComment(res.data.comment_create));
+        if (res.errors) 
+          throw res;
+        var res = res.data.comment_create;
+        var info = {
+          id: res.feedback_comment_edge.node.id,
+          url: res.feedback_comment_edge.node.feedback.url,
+          commentCount: res.feedback.display_comments_count.count
+        }
+        return cb(null, info);
       })
       .catch(cb);
 
     return rt;
   }
   
-  return function createCommentPost(input, postID, callback, replyCommentID, isGroup) {
+  return function createCommentPost(input, postID, callback, replyCommentID) {
     var cb;
-    typeof isGroup != 'boolean' ? isGroup = false : null;
     var rt = new Promise(function (resolve, reject) {
       cb = (error, info) => error ? reject(error) : resolve(info);
     });
 
+    if (typeof input == 'function') {
+      callback = input;
+      input = null;
+    }
     if (typeof postID == 'function') {
-      var error = 'Pass a postID as a string argument.';
-      log.error('createCommentPost', error);
-      return postID(error);
+      callback = postID;
+      postID = null;
     }
     if (typeof callback == 'string') {
       replyCommentID = callback;
@@ -145,20 +149,15 @@ module.exports = function (http, api, ctx) {
     if (typeof callback == 'function') cb = callback;
     if (typeof replyCommentID != 'string') replyCommentID = null;
 
-    var typeMsg = utils.getType(input);
-    var typePID = utils.getType(postID);
-
-    if (typeMsg == 'String' || typeMsg == 'Array') input = { body: input }
-    else if (typeMsg != 'Object' || Object.keys(input).length < 1) {
-      var error = "Message should be of type string or object or array and not " + typeMsg;
-      log.error('createCommentPost', error);
-      return cb(error);
-    }
-    if (typePID != 'String') {
-      var error = 'postID should be of type string, not ' + typeTID;
-      log.error('createCommentPost', error);
-      return cb(error);
-    }
+    var type = utils.getType(input);
+    if (type == 'String') 
+      input = { 
+        body: input 
+      }
+    else if (type != 'Object') 
+      return cb('input should be an object or string, not' + type);
+    if (typeof postID != 'string')
+      return cb('postID should be a string');
 
     var form = {
       feedLocation: 'PERMALINK',
@@ -190,17 +189,17 @@ module.exports = function (http, api, ctx) {
       useDefaultActor: false,
       focusCommentID: null
     }
-
-    handleAttachment(form, input)
-      .then(_ => handleUrl(form, input))
+    handleUpload(input, form)
       .then(_ => handleMention(input, form))
+      .then(_ => handleUrl(input, form))
+      .then(_ => handleSticker(input, form))
       .then(_ => createContent(form))
       .then(info => cb(null, info))
       .catch(function (err) {
         log.error('createCommentPost', err);
         return cb(err);
       });
-
+    
     return rt;
   }
 }
