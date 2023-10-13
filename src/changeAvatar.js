@@ -1,53 +1,25 @@
-"use strict";
+'use strict';
 
-var utils = require("../utils");
-var log = require("npmlog");
+var utils = require('../utils');
+var log = require('npmlog');
 
 module.exports = function (http, api, ctx) {
-  function handleUpload(image) {
+  return function changeAvatar(image, caption = '', timestamp = null, callback) {
     var cb;
-    var nextURL = 'https://www.facebook.com/profile/picture/upload/';
-    var rtPromise = new Promise(function (resolve, reject) {
-      cb = function (error, data) {
-        data ? resolve(data) : reject(error);
-      }
+    var rt = new Promise(function (resolve, reject) {
+      cb = (error, url) => error ? reject(error) : resolve(url);
     });
 
-    if (!utils.isReadableStream(image)) 
-      cb('image is not a readable stream');
-
-    http
-      .postFormData(nextURL, ctx.jar, {
-        profile_id: ctx.userID,
-        photo_source: 57,
-        av: ctx.userID,
-        file: image
-      })
-      .then(utils.parseAndCheckLogin(ctx, http))
-      .then(function (res) {
-        if (res.error) 
-          throw res;
-        return cb(null, res);
-      })
-      .catch(cb);
-
-    return rtPromise;
-  }
-
-  return function changeAvatar(image, caption = "", timestamp = null, callback) {
-    var cb;
-    var rtPromise = new Promise(function (resolve, reject) {
-      cb = function (error, data) {
-        data ? resolve(data) : reject(error);
-      }
-    });
-
-    if (typeof caption == 'number') {
-      timestamp = caption;
-      caption = '';
+    if (typeof image == 'function') {
+      callback = image;
+      image = null;
     }
     if (typeof caption == 'function') {
       callback = caption;
+      caption = '';
+    }
+    if (typeof caption == 'number') {
+      timestamp = caption;
       caption = '';
     }
     if (typeof timestamp == 'function') {
@@ -56,12 +28,24 @@ module.exports = function (http, api, ctx) {
     }
     if (typeof callback == 'function') cb = callback;
 
-    handleUpload(image)
-      .then(function (res) {
-        var form = {
-          fb_api_req_friendly_name: "ProfileCometProfilePictureSetMutation",
-          doc_id: "5066134240065849",
-          variables: JSON.stringify({
+    if (!utils.isReadableStream(image)) {
+      var error = 'image should be a readable stream, not ' + utils.getType(image);
+      log.error('changeAvatar', error);
+      cb(error);
+    } else {
+      http
+        .postFormData('https://www.facebook.com/profile/picture/upload/', ctx.jar, {
+          profile_id: ctx.userID,
+          photo_source: 57,
+          av: ctx.userID,
+          file: image
+        })
+        .then(utils.parseAndCheckLogin(ctx, http))
+        .then(function (res) {
+          if (res.error || res.errors || !res.payload) 
+            throw res;
+
+          var vari = {
             input: {
               caption,
               existing_photo_id: res.payload.fbid,
@@ -82,23 +66,28 @@ module.exports = function (http, api, ctx) {
             isPage: false,
             isProfile: true,
             scale: 3
-          }),
-          fb_api_caller_class: "RelayModern"
-        }
-        return http
-          .post('https://www.facebook.com/api/graphql', ctx.jar, form)
-          .then(utils.parseAndCheckLogin(ctx, http));
-      })
-      .then(function (res) {
-        if (res.errors) 
-          throw res;
-        return cb(null, (res[0] || res).data.profile_picture_set.profile);
-      })
-      .catch(function (err) {
-        log.error('changeAvatar', err);
-        return cb(err);
-      });
+          }
+          return http
+            .post('https://www.facebook.com/api/graphql', ctx.jar, {
+              doc_id: 5066134240065849,
+              server_timestamps: true,
+              fb_api_req_friendly_name: 'ProfileCometProfilePictureSetMutation',
+              variables: JSON.stringify(vari)
+            })
+            .then(utils.parseAndCheckLogin(ctx, http));
+        })
+        .then(function (res) {
+          if (res.errors)
+            throw res;
 
-    return rtPromise;
+          return cb(null, (res[0] || res).data.profile_picture_set.profile);
+        })
+        .catch(function (err) {
+          log.error('changeAvatar', err);
+          return cb(err);
+        });
+    }
+
+    return rt;
   }
 }
