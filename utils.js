@@ -9,7 +9,9 @@ const url = require("url");
 
 function setProxy(proxy) {
   if (typeof proxy == 'string')
-    request = require("request").defaults({ jar: true, proxy });
+    request = require("request").defaults({ jar: !0, proxy });
+  else 
+    request = require('request').defaults({ jar: !0 });
   return;
 }
 
@@ -26,9 +28,9 @@ function getHeaders(url, options, ctx, customHeader) {
 	};
 	if (customHeader) {
 		Object.assign(headers, customHeader);
+    if (customHeader.noRef) 
+      delete headers.Referer;
 	}
-  if (customHeader && customHeader.noRef) 
-    delete headers.Referer;
 	if (ctx && ctx.region) 
     headers["X-MSGR-Region"] = ctx.region;
 
@@ -36,65 +38,75 @@ function getHeaders(url, options, ctx, customHeader) {
 }
 
 function isReadableStream(obj) {
-	return (
-		obj instanceof stream.Stream &&
-		(getType(obj._read) === "Function" ||
-			getType(obj._read) === "AsyncFunction") &&
-		getType(obj._readableState) === "Object"
-	);
+	return obj instanceof stream.Stream && typeof obj._read == "function" && getType(obj._readableState) == "Object";
 }
 
 function get(url, jar, qs, options, ctx, customHeader) {
-	// I'm still confused about this
-	if (getType(qs) === "Object") {
-		for (const prop in qs) {
-			if (qs.hasOwnProperty(prop) && getType(qs[prop]) === "Object") {
-				qs[prop] = JSON.stringify(qs[prop]);
-			}
-		}
-	}
-	const op = {
-		headers: getHeaders(url, options, ctx, customHeader),
+	let callback;
+  var returnPromise = new Promise(function (resolve, reject) {
+    callback = (error, res) => error ? reject(error) : resolve(res);
+  });
+	if (getType(qs) == "Object") 
+    for (let prop in qs) {
+      if (getType(qs[prop]) == 'Object')
+        qs[prop] = JSON.stringify(qs[prop]);
+    }
+	var op = {
+    headers: getHeaders(url, options, ctx, customHeader),
 		timeout: 60000,
-		qs: qs,
-		url: url,
-		method: "GET",
-		jar: jar,
-		gzip: true
-	};
+		qs,
+		jar,
+		gzip: !0
+	}
 
-  return new Promise((resolve, reject) => request(op, (error, data) => error != null ? reject(error) : resolve(data)));
+  request.get(url, op, callback);
+
+  return returnPromise;
 }
 
 function post(url, jar, form, options, ctx, customHeader) {
+  let callback;
+  var returnPromise = new Promise(function (resolve, reject) {
+    callback = (error, res) => error ? reject(error) : resolve(res);
+  });
+  
 	var op = {
     headers: getHeaders(url, options, ctx, customHeader),
     timeout: 60000,
-		url: url,
-		method: "POST",
-		form: form,
-		jar: jar,
-		gzip: true
+		form,
+		jar,
+		gzip: !0
 	}
 
-	return new Promise((resolve, reject) => request(op, (error, data) => error != null ? reject(error) : resolve(data)));
+  request.post(url, op, callback);
+
+	return returnPromise;
 }
 
 function postFormData(url, jar, form, qs, options, ctx) {
-	var headers = getHeaders(url, options, ctx);
-	headers["Content-Type"] = "multipart/form-data";
+  let callback;
+  var returnPromise = new Promise(function (resolve, reject) {
+    callback = (error, res) => error ? reject(error) : resolve(res);
+  });
+  if (getType(qs) == "Object") 
+    for (let prop in qs) {
+      if (getType(qs[prop]) == 'Object')
+        qs[prop] = JSON.stringify(qs[prop]);
+    }
 	var op = {
-		headers: headers,
+		headers: getHeaders(url, options, ctx, {
+      'Content-Type': 'multipart/form-data'
+    }),
 		timeout: 60000,
-		url: url,
-		method: "POST",
 		formData: form,
-		qs: qs,
-		jar: jar,
-		gzip: true
-	};
+		qs,
+		jar,
+		gzip: !0
+	}
 
-	return new Promise((resolve, reject) => request(op, (error, data) => error != null ? reject(error) : resolve(data)));
+  request.post(url, op, callback);
+
+	return returnPromise;
 }
 
 function padZeros(val, len) {
@@ -1359,5 +1371,7 @@ module.exports = {
 	getAppState,
 	getAdminTextMessageType,
 	setProxy,
-  getAccessFromBusiness
+  getAccessFromBusiness,
+  presenceDecode,
+  presenceEncode
 }
