@@ -95,6 +95,11 @@ function buildAPI(globalOptions, html, token, jar) {
     setOptions: setOptions.bind(null, globalOptions),
     getAppState: function getAppState() {
       return utils.getAppState(jar);
+    },
+    getCookie: function getCookie() {
+      return jar
+        .getCookies('https://www.facebook.com/')
+        .join('; ');
     }
   }
 
@@ -137,15 +142,15 @@ function buildAPI(globalOptions, html, token, jar) {
     jar,
     clientID,
     globalOptions,
-    loggedIn: true,
+    loggedIn: !0,
     access_token: token,
     clientMutationId: 0,
-    mqttClient: undefined,
+    mqttClient: void 0,
     lastSeqId: irisSeqID,
-    syncToken: undefined,
+    syncToken: void 0,
     mqttEndpoint,
     region,
-    firstListen: true
+    firstListen: !0
   };
 
   var http = utils.makeDefaults(html, userID, ctx);
@@ -445,6 +450,10 @@ function loginHelper(appState, email, password, globalOptions, callback, prCallb
       http = stuff[1];
       api = stuff[2];
     });
+
+  if (globalOptions.pageID) {
+    
+  }
 	
   // At the end we call the callback or catch an exception
   mainPromise
@@ -473,19 +482,19 @@ function login(loginData, options, callback) {
   if (options == undefined) options = {};
 
   var globalOptions = {
-    selfListen: false,
-    selfListenEvent: false,
-    listenEvents: true,
-    listenTyping: false,
-    updatePresence: true,
-    forceLogin: false,
-    autoMarkDelivery: true,
-    autoMarkRead: true,
-    autoReconnect: true,
-    autoRestartMqtt: false,
+    selfListen: !1,
+    selfListenEvent: !1,
+    listenEvents: !0,
+    listenTyping: !1,
+    updatePresence: !0,
+    forceLogin: !1,
+    autoMarkDelivery: !0,
+    autoMarkRead: !0,
+    autoReconnect: !0,
+    autoRestartMqtt: !1,
     logRecordSize: defaultLogRecordSize,
-    online: true
-  };
+    online: !0
+  }
   setOptions(globalOptions, options);
 
   if (!loginData.appState && (!loginData.email || !loginData.password)) {
