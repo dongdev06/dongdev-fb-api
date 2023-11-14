@@ -68,13 +68,14 @@ module.exports = function (http, api, ctx) {
 
   function handleMention(msg) {
     if (!msg.mentions) return;
+    !Array.isArray(msg.mentions) ? msg.mentions = [msg.mentions] : null;
     msg.mentions.map(function (mention, i) {
       var { tag, id } = mention;
 
       if (typeof tag != 'string')
         throw 'Mention tag must be string';
       if (!id)
-        throw 'ID must be string';
+        throw 'id must be string';
       var offset = msg.body.indexOf(tag, mention.fromIndex || 0);
       if (offset < 0)
         throw 'Mention for "' + tag + '" not found in message string.';
@@ -164,15 +165,10 @@ module.exports = function (http, api, ctx) {
     } else form.thread_fbid = threadID;
 
     if (ctx.globalOptions.pageID) {
-      form.author = "fbid:" + ctx.globalOptions.pageID;
       form["specific_to_list[1]"] = "fbid:" + ctx.globalOptions.pageID;
-      form["creator_info[creatorID]"] = ctx.userID;
-      form["creator_info[creatorType]"] = "direct_admin";
-      form["creator_info[labelType]"] = "sent_message";
-      form["creator_info[pageID]"] = ctx.globalOptions.pageID;
+      form.source = 'source:page_unified_inbox';
       form.request_user_id = ctx.globalOptions.pageID;
-      form["creator_info[profileURI]"] =
-        "https://www.facebook.com/profile.php?id=" + ctx.userID;
+      form.ephemeral_ttl_mode = 0;
     }
 
     http
@@ -280,6 +276,7 @@ module.exports = function (http, api, ctx) {
       handleEmoji(msg);
       handleMention(msg);
     } catch (e) {
+      log.error('sendMessage', e);
       return cb(e);
     }
 
