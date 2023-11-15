@@ -23,7 +23,7 @@ module.exports = function (http, api, ctx) {
       customHeader = {}
     }
     if (typeof customHeader == 'boolean') {
-      notAPI = customheader;
+      notAPI = customHeader;
       customHeader = {}
     }
     if (typeof callback == 'boolean') {
