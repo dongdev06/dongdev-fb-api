@@ -176,6 +176,9 @@ module.exports = function (http, api, ctx) {
       return cb(error);
     }
 
+    if (typeof replyCommentID != 'string') 
+      replyCommentID = null;
+
     var form = {
       feedLocation: 'NEWSFEED',
       feedbackSource: 1,
