@@ -1,68 +1,78 @@
 'use strict';
 
-var utils = require('../utils');
+var utils = require('../utils.js');
 var log = require('npmlog');
 
 module.exports = function (http, api, ctx) {
-  function handleUpload(input, form) {
+  function handleUpload(msg, form) {
     var cb;
-    var rt = new Promise(function (resolve, reject) {
+    var uploads = [];
+    var returnPromise = new Promise(function (resolve, reject) {
       cb = error => error ? reject(error) : resolve();
     });
 
-    if (!input.attchment) cb();
-    else {
-      input.attachment = !Array.isArray(input.attachment) ? [input.attachment] : input.attachment;
-      var uploads = [];
-      for (let image of input.attachment) {
-        if (!utils.isReadableStream(image))
-          return cb('image should be a readable stream and not ' + utils.getType(image));
-        var httpPromise = http
-          .postFormData('https://www.facebook.com/ajax/ufi/upload/', ctx.jar, {
-            profile_id: ctx.userID,
-            source: 19,
-            target_id: ctx.userID,
-            file: image
-          })
-          .then(utils.parseAndCheckLogin(ctx, http))
-          .then(function (res) {
-            if (res.errors || res.error || !res.payload) 
-              throw res;
+    for (let item of msg.attachments) {
+      if (!utils.isReadableStream(item))
+        return cb({ error: 'image should be a readable stream and not ' + utils.getType(image) });
 
-            return {
-              media: {
-                id: res.payload.id
-              }
-            }
-          })
-          .catch(cb);
-        uploads.push(httpPromise);
-      }
-
-      Promise
-        .all(uploads)
+      var httpData = http
+        .postFormData('https://www.facebook.com/ajax/ufi/upload/', ctx.jar, {
+          profile_id: ctx.userID,
+          source: 19,
+          target_id: ctx.userID,
+          file: item
+        })
+        .then(utils.parseAndCheckLogin(ctx, http))
         .then(function (res) {
-          for (let item of res) 
-            form.input.attachments.push(item);
+          if (res.errors || res.error || !res.payload) 
+            throw res;
 
-          return cb();
+          return {
+            media: {
+              id: res.payload.fbid
+            }
+          }
         })
         .catch(cb);
+      
+      uploads.push(httpData);
     }
 
-    return rt;
+    Promise
+      .all(uploads)
+      .then(function (main) {
+        main.forEach(item => form.input.attachments.push(item));
+
+        return cb();
+      })
+      .catch(cb);
+
+    return returnPromise;
   }
 
-  function handleMention(input, form) {
-    if (!input.mentions) return;
-    input.mentions = !Array.isArray(input.mentions) ? [input.mentions] : input.mentions;
-    for (let mention of input.mentions) {
-      var { tag, id, fromIndex } = mention;
+  function handleURL(msg, form) {
+    if (typeof msg.url == 'string') {
+      form.input.attachments = [
+        {
+          link: {
+            external: {
+              url: msg.url
+            }
+          }
+        }
+      ];
+    }
+  }
+
+  function handleMentions(msg, form) {
+    for (let item of msg.mentions) {
+      var { tag, id, fromIndex } = item;
+
       if (typeof tag != 'string')
         throw 'Mention tag must be string';
       if (!id)
         throw 'id must be string';
-      var offset = input.body.indexOf(tag, fromIndex || 0);
+      var offset = msg.body.indexOf(tag, fromIndex || 0);
       if (offset < 0)
         throw 'Mention for "' + tag + '" not found in message string.';
       form.input.message.ranges.push({
@@ -73,34 +83,22 @@ module.exports = function (http, api, ctx) {
     }
   }
 
-  function handleUrl(input, form) {
-    if (!input.url && typeof input.url == 'string') return;
-    form.input.attachments = [
-      {
-        link: {
-          external: {
-            url: input.url
+  function handleSticker(msg, form) {
+    if (msg.sticker) {
+      form.input.attachments = [
+        {
+          media: {
+            id: msg.sticker
           }
         }
-      }
-    ];
+      ];
+    }
   }
-
-  function handleSticker(input, form) {
-    if (!input.sticker && !isNaN(input.sticker)) return;
-    form.input.attachments = [
-      {
-        media: {
-          id: input.sticker
-        }
-      }
-    ];
-  }
-
+  
   function createContent(form) {
     var cb;
-    var rt = new Promise(function (resolve, reject) {
-      cb = (error, info) => error ? reject(error) : resolve(info);
+    var returnPromise = new Promise(function (resolve, reject) {
+      cb = (error, info) => info ? resolve(info) : reject(error);
     });
 
     http
@@ -108,60 +106,79 @@ module.exports = function (http, api, ctx) {
         fb_api_caller_class: 'RelayModern',
         fb_api_req_friendly_name: 'useCometUFICreateCommentMutation',
         variables: JSON.stringify(form),
-        server_timestamps: true,
-        doc_id: 6687401108025716
+        server_timestamps: !0,
+        doc_id: 6993516810709754
       })
       .then(utils.parseAndCheckLogin(ctx, http))
       .then(function (res) {
         if (res.errors) 
           throw res;
+        
         var res = res.data.comment_create;
         var info = {
           id: res.feedback_comment_edge.node.id,
           url: res.feedback_comment_edge.node.feedback.url,
-          commentCount: res.feedback.display_comments_count.count
+          count: res.feedback.total_comment_count
         }
         return cb(null, info);
       })
       .catch(cb);
-
-    return rt;
+    
+    return returnPromise;
   }
   
-  return function createCommentPost(input, postID, callback, replyCommentID) {
+  return function createCommentPost(msg, postID, callback, replyCommentID) {
     var cb;
-    var rt = new Promise(function (resolve, reject) {
-      cb = (error, info) => error ? reject(error) : resolve(info);
+    var returnPromise = new Promise(function (resolve, reject) {
+      cb = (error, info) => info ? resolve(info) : reject(error);
     });
 
-    if (typeof input == 'function') {
-      callback = input;
-      input = null;
+    if (typeof msg == 'function') {
+      var error = 'Message must be a string or object!!';
+      log.error('createCommentPost', error);
+      return msg(error);
     }
     if (typeof postID == 'function') {
-      callback = postID;
-      postID = null;
+      var error = 'postID must be a string!!';
+      log.error('createCommentPost', error);
+      return postID(error);
     }
     if (typeof callback == 'string') {
       replyCommentID = callback;
       callback = null;
     }
-    if (typeof callback == 'function') cb = callback;
-    if (typeof replyCommentID != 'string') replyCommentID = null;
+    if (typeof callback == 'function') 
+      cb = calback;
 
-    var type = utils.getType(input);
-    if (type == 'String') 
-      input = { 
-        body: input 
+    var MessageType = utils.getType(msg);
+
+    if (MessageType == 'string') 
+      msg = { 
+        body: msg,
+        attachments: [],
+        mentions: [],
+        sticker: null,
+        url: null
       }
-    else if (type != 'Object') 
-      return cb('input should be an object or string, not' + type);
-    if (typeof postID != 'string')
-      return cb('postID should be a string');
+    else if (MessageType == 'Object') {
+      msg.mentions ? !Array.isArray(msg.mentions) ? msg.mentions = [msg.mentions] : null : msg.mentions = [];
+      msg.attachments ? !Array.isArray(msg.attachments) ? msg.attachments = [msg.attachments] : null : msg.attachments = [];
+      isNaN(msg.sticker) ? msg.sticker = null : null;
+      msg.body ? typeof msg.body == 'object' ? msg.body = JSON.stringify(msg.body) : null : msg.body = '';
+    } else {
+      var error = 'Message must be a string or object!!';
+      log.error('createCommentPost', error);
+      return cb(error);
+    }
+    if (typeof postID != 'string') {
+      var error = 'postID must be a string!!';
+      log.error('createCommentPost', error);
+      return cb(error);
+    }
 
     var form = {
-      feedLocation: 'PERMALINK',
-      feedbackSource: 2,
+      feedLocation: 'NEWSFEED',
+      feedbackSource: 1,
       groupID: null,
       input: {
         client_mutation_id: Math.round(Math.random() * 19).toString(),
@@ -170,36 +187,41 @@ module.exports = function (http, api, ctx) {
         feedback_id: Buffer.from('feedback:' + postID).toString('base64'),
         formatting_style: null,
         message: {
-          ranges: [],
-          text: input.body ? typeof input.body == 'object' ? JSON.stringify(input.body) : input.body : '' 
+          ranges: [],  
+          text: msg.body
         }, 
         reply_comment_parent_fbid: replyCommentID ? isNaN(replyCommentID) ? replyCommentID : Buffer.from('comment:' + postID + '_' + replyCommentID).toString('base64') : null,
         reply_target_clicked: !!replyCommentID,
-        attribution_id_v2: 'CometSinglePostRoot.react,comet.post.single,via_cold_start,' + Date.now() + ',253913,,',
+        attribution_id_v2: 
+          'CometHomeRoot.react,comet.home,via_cold_start,' 
+          + Date.now() 
+          + ',156248,4748854339,,',
         vod_video_timestamp: null,
-        is_tracking_encrypted: true,
-        tracking: [],
-        feedback_source: 'OBJECT',
+        feedback_referrer: '/',
+        is_tracking_encrypted: !0,
+        tracking: [], 
+        feedback_source: 'NEWS_FEED', 
         idempotence_token: 'client:' + utils.getGUID(),
         session_id: utils.getGUID()
       },
       inviteShortLinkKey: null,
       renderLocation: null,
       scale: 1,
-      useDefaultActor: false,
+      useDefaultActor: !1, 
       focusCommentID: null
     }
-    handleUpload(input, form)
-      .then(_ => handleMention(input, form))
-      .then(_ => handleUrl(input, form))
-      .then(_ => handleSticker(input, form))
+
+    handleUpload(msg, form)
+      .then(_ => handleURL(msg, form))
+      .then(_ => handleMentions(msg, form))
+      .then(_ => handleSticker(msg, form))
       .then(_ => createContent(form))
       .then(info => cb(null, info))
       .catch(function (err) {
         log.error('createCommentPost', err);
-        return cb(err);
-      });
-    
-    return rt;
+        return cb(null, err);
+      })
+
+    return returnPromise;
   }
 }
