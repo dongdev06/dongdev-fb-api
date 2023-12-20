@@ -314,7 +314,7 @@ function parseDelta(http, api, ctx, v, globalCallback) {
       var mid = v.delta.messageId;
       var tid = v.delta.threadKey.threadFbId;
       if (!mid && !tid) break;
-      form = {
+      var form = {
         av: ctx.globalOptions.pageID,
         queries: JSON.stringify({
           o0: {
