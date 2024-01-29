@@ -152,7 +152,7 @@ module.exports = function (http, api, ctx) {
 
     var MessageType = utils.getType(msg);
 
-    if (MessageType == 'string') 
+    if (MessageType == 'String') 
       msg = { 
         body: msg,
         attachments: [],
