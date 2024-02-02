@@ -1,6 +1,6 @@
 {
-  "name": "fb-chat-support",
-  "version": "0.1.1",
+  "name": "dongdev-fb-api",
+  "version": "1.0.4",
   "description": "A Facebook chat API that doesn't rely on XMPP",
   "scripts": {
     "test": "mocha",
@@ -15,12 +15,12 @@
     "facebook",
     "chat",
     "api",
-    "fb-chat-support"
+    "dongdev-fb-api"
   ],
   "bugs": {
     "url": "https://github.com/KhangGia1810/fb-chat-support/issues"
   },
-  "author": "Avery, David, Maude, Benjamin, UIRI, NTKhang (rebuild), Sam (Update)",
+  "author": "Avery, David, Maude, Benjamin, UIRI, NTKhang (rebuild), Sam (Update), DongDev (Update)",
   "license": "MIT",
   "dependencies": {
     "cheerio": "^0.22.0",
@@ -43,7 +43,7 @@
       "commonjs": true,
       "es2021": true,
       "node": true,
-			"bash": true
+      "bash": true
     },
     "extends": "eslint:recommended",
     "parserOptions": {
@@ -64,8 +64,8 @@
       "no-extra-semi": 1,
       "no-async-promise-executor": 0,
       "no-unreachable": 1,
-			"valid-typeof": 0,
-			"no-case-declarations": 0
+      "valid-typeof": 0,
+      "no-case-declarations": 0
     }
   }
 }
